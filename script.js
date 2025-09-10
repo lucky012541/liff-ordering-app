@@ -85,7 +85,7 @@ class OrderingApp {
                 name: 'น้ำแข็ง เล็ก',
                 description: 'น้ำแข็งก้อนเล็ก เหมาะสำหรับเครื่องดื่มเย็น',
                 price: 40,
-                image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+                icon: 'fas fa-snowflake',
                 category: 'ice',
                 stock: 100
             },
@@ -94,7 +94,7 @@ class OrderingApp {
                 name: 'น้ำแข็งใหญ่',
                 description: 'น้ำแข็งก้อนใหญ่ เหมาะสำหรับเก็บอาหารและเครื่องดื่ม',
                 price: 40,
-                image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+                icon: 'fas fa-cube',
                 category: 'ice',
                 stock: 80
             },
@@ -103,7 +103,7 @@ class OrderingApp {
                 name: 'น้ำแข็งบด',
                 description: 'น้ำแข็งบดละเอียด เหมาะสำหรับเครื่องดื่มเย็น',
                 price: 40,
-                image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+                icon: 'fas fa-icicles',
                 category: 'ice',
                 stock: 120
             },
@@ -112,7 +112,7 @@ class OrderingApp {
                 name: 'น้ำดื่ม 1 ลิตร',
                 description: 'น้ำดื่มสะอาด บรรจุขวด 1 ลิตร',
                 price: 15,
-                image: 'https://images.unsplash.com/photo-1548839140-29a749e1daf5?w=400&h=300&fit=crop',
+                icon: 'fas fa-tint',
                 category: 'water',
                 stock: 200
             },
@@ -121,7 +121,7 @@ class OrderingApp {
                 name: 'น้ำดื่ม 500 มล.',
                 description: 'น้ำดื่มสะอาด บรรจุขวด 500 มิลลิลิตร',
                 price: 10,
-                image: 'https://images.unsplash.com/photo-1548839140-29a749e1daf5?w=400&h=300&fit=crop',
+                icon: 'fas fa-wine-bottle',
                 category: 'water',
                 stock: 300
             },
@@ -130,7 +130,7 @@ class OrderingApp {
                 name: 'แก๊สหุงต้ม 15 กก.',
                 description: 'แก๊สหุงต้มถัง 15 กิโลกรัม สำหรับครัวเรือน',
                 price: 350,
-                image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=300&fit=crop',
+                icon: 'fas fa-fire',
                 category: 'gas',
                 stock: 50
             },
@@ -139,7 +139,7 @@ class OrderingApp {
                 name: 'แก๊สหุงต้ม 12 กก.',
                 description: 'แก๊สหุงต้มถัง 12 กิโลกรัม ขนาดเล็ก',
                 price: 280,
-                image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=300&fit=crop',
+                icon: 'fas fa-fire-flame-simple',
                 category: 'gas',
                 stock: 30
             }
@@ -314,7 +314,9 @@ class OrderingApp {
 
         productsGrid.innerHTML = filteredProducts.map(product => `
             <div class="product-card" onclick="app.openProductModal(${product.id})">
-                <img src="${product.image}" alt="${product.name}" class="product-image" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
+                <div class="product-icon">
+                    <i class="${product.icon}"></i>
+                </div>
                 <div class="product-info">
                     <h3 class="product-name">${product.name}</h3>
                     <p class="product-description">${product.description}</p>
@@ -340,7 +342,7 @@ class OrderingApp {
         const product = this.products.find(p => p.id === productId);
         if (!product) return;
 
-        document.getElementById('modalProductImage').src = product.image;
+        document.getElementById('modalProductImage').innerHTML = `<i class="${product.icon}"></i>`;
         document.getElementById('modalProductName').textContent = product.name;
         document.getElementById('modalProductDescription').textContent = product.description;
         document.getElementById('modalProductPrice').textContent = `฿${product.price}`;
@@ -448,7 +450,9 @@ class OrderingApp {
         } else {
             cartItems.innerHTML = this.cart.map(item => `
                 <div class="cart-item">
-                    <img src="${item.image}" alt="${item.name}" class="cart-item-image" onerror="this.src='https://via.placeholder.com/60x60?text=No+Image'">
+                    <div class="cart-item-icon">
+                        <i class="${item.icon}"></i>
+                    </div>
                     <div class="cart-item-info">
                         <div class="cart-item-name">${item.name}</div>
                         <div class="cart-item-price">฿${item.price}</div>

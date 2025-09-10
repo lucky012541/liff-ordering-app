@@ -184,10 +184,19 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="productImage">รูปภาพสินค้า</label>
-                        <input type="file" id="productImage" name="image" accept="image/*">
-                        <div class="image-preview" id="imagePreview">
-                            <img id="previewImg" src="" alt="Preview" style="display: none;">
+                        <label for="productIcon">ไอคอนสินค้า</label>
+                        <select id="productIcon" name="icon" required>
+                            <option value="fas fa-snowflake">❄️ น้ำแข็ง</option>
+                            <option value="fas fa-cube">🧊 ก้อนน้ำแข็ง</option>
+                            <option value="fas fa-icicles">🧊 น้ำแข็งบด</option>
+                            <option value="fas fa-tint">💧 น้ำดื่ม</option>
+                            <option value="fas fa-wine-bottle">🍼 ขวดน้ำ</option>
+                            <option value="fas fa-fire">🔥 แก๊สหุงต้ม</option>
+                            <option value="fas fa-fire-flame-simple">🔥 แก๊สเล็ก</option>
+                            <option value="fas fa-box">📦 สินค้าทั่วไป</option>
+                        </select>
+                        <div class="icon-preview" id="iconPreview">
+                            <div id="previewImg" class="product-icon" style="display: none;"></div>
                         </div>
                     </div>
                     

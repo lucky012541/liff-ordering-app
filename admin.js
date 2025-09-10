@@ -96,7 +96,7 @@ class AdminDashboard {
                 name: 'น้ำแข็ง เล็ก',
                 description: 'น้ำแข็งก้อนเล็ก เหมาะสำหรับเครื่องดื่มเย็น',
                 price: 40,
-                image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+                icon: 'fas fa-snowflake',
                 category: 'ice',
                 stock: 100
             },
@@ -105,7 +105,7 @@ class AdminDashboard {
                 name: 'น้ำแข็งใหญ่',
                 description: 'น้ำแข็งก้อนใหญ่ เหมาะสำหรับเก็บอาหารและเครื่องดื่ม',
                 price: 40,
-                image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+                icon: 'fas fa-cube',
                 category: 'ice',
                 stock: 80
             },
@@ -114,7 +114,7 @@ class AdminDashboard {
                 name: 'น้ำแข็งบด',
                 description: 'น้ำแข็งบดละเอียด เหมาะสำหรับเครื่องดื่มเย็น',
                 price: 40,
-                image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+                icon: 'fas fa-icicles',
                 category: 'ice',
                 stock: 120
             },
@@ -123,7 +123,7 @@ class AdminDashboard {
                 name: 'น้ำดื่ม 1 ลิตร',
                 description: 'น้ำดื่มสะอาด บรรจุขวด 1 ลิตร',
                 price: 15,
-                image: 'https://images.unsplash.com/photo-1548839140-29a749e1daf5?w=400&h=300&fit=crop',
+                icon: 'fas fa-tint',
                 category: 'water',
                 stock: 200
             },
@@ -132,7 +132,7 @@ class AdminDashboard {
                 name: 'น้ำดื่ม 500 มล.',
                 description: 'น้ำดื่มสะอาด บรรจุขวด 500 มิลลิลิตร',
                 price: 10,
-                image: 'https://images.unsplash.com/photo-1548839140-29a749e1daf5?w=400&h=300&fit=crop',
+                icon: 'fas fa-wine-bottle',
                 category: 'water',
                 stock: 300
             },
@@ -141,7 +141,7 @@ class AdminDashboard {
                 name: 'แก๊สหุงต้ม 15 กก.',
                 description: 'แก๊สหุงต้มถัง 15 กิโลกรัม สำหรับครัวเรือน',
                 price: 350,
-                image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=300&fit=crop',
+                icon: 'fas fa-fire',
                 category: 'gas',
                 stock: 50
             },
@@ -150,7 +150,7 @@ class AdminDashboard {
                 name: 'แก๊สหุงต้ม 12 กก.',
                 description: 'แก๊สหุงต้มถัง 12 กิโลกรัม ขนาดเล็ก',
                 price: 280,
-                image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=300&fit=crop',
+                icon: 'fas fa-fire-flame-simple',
                 category: 'gas',
                 stock: 30
             }
@@ -199,8 +199,8 @@ class AdminDashboard {
             this.saveProduct();
         });
 
-        document.getElementById('productImage').addEventListener('change', (e) => {
-            this.previewImage(e);
+        document.getElementById('productIcon').addEventListener('change', (e) => {
+            this.previewIcon(e);
         });
 
         // Close admin modal when clicking outside
@@ -348,7 +348,9 @@ class AdminDashboard {
 
         productsManagement.innerHTML = this.products.map(product => `
             <div class="product-card">
-                <img src="${product.image}" alt="${product.name}" class="product-image" onerror="this.src='https://via.placeholder.com/300x150?text=No+Image'">
+                <div class="product-icon">
+                    <i class="${product.icon}"></i>
+                </div>
                 <div class="product-info">
                     <h4>${product.name}</h4>
                     <p>${product.description}</p>
@@ -498,7 +500,8 @@ class AdminDashboard {
                 document.getElementById('productPrice').value = product.price;
                 document.getElementById('productStock').value = product.stock;
                 document.getElementById('productCategory').value = product.category;
-                document.getElementById('previewImg').src = product.image;
+                document.getElementById('productIcon').value = product.icon;
+                document.getElementById('previewImg').innerHTML = `<i class="${product.icon}"></i>`;
                 document.getElementById('previewImg').style.display = 'block';
             }
         } else {
@@ -517,17 +520,11 @@ class AdminDashboard {
         document.getElementById('previewImg').style.display = 'none';
     }
 
-    previewImage(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const previewImg = document.getElementById('previewImg');
-                previewImg.src = e.target.result;
-                previewImg.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        }
+    previewIcon(event) {
+        const selectedIcon = event.target.value;
+        const previewImg = document.getElementById('previewImg');
+        previewImg.innerHTML = `<i class="${selectedIcon}"></i>`;
+        previewImg.style.display = 'block';
     }
 
     saveProduct() {
@@ -540,7 +537,7 @@ class AdminDashboard {
             price: parseInt(formData.get('price')),
             stock: parseInt(formData.get('stock')),
             category: formData.get('category'),
-            image: document.getElementById('previewImg').src || 'https://via.placeholder.com/400x300?text=No+Image'
+            icon: document.getElementById('productIcon').value || 'fas fa-box'
         };
 
         if (this.editingProduct) {

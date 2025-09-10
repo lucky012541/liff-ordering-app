@@ -1,0 +1,15 @@
+[33m84e27bc[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Add .gitignore file
+[33m5fa7eea[m Initial commit: LIFF Ordering App with Admin Dashboard
+[33meb90430[m[33m ([m[1;31morigin/main[m[33m)[m Improve Flex Message system - add owner instructions and better chat integration
+[33m4cf78bd[m Add order confirmation system - owner can confirm and update order status
+[33m7649129[m Complete orange theme - update Flex Message colors to orange theme
+[33ma272be2[m Add Flex Message feature - send order details to LINE chat after checkout
+[33me63af76[m Update products to ice shop - 3 ice products at 40 baht each
+[33m9a0419a[m Complete orange theme update - all UI elements now orange
+[33maba3c61[m Resolve merge conflicts and update to orange theme
+[33mb4f88d7[m Update UI to orange theme and add new products
+[33m4a23622[m Initial commit - LIFF Ordering App with GitHub Pages support
+[33mb7d6178[m Merge pull request #1 from lucky012541/lucky012541-patch-1
+[33m1d53558[m V1
+[33mb6df066[m Add files via upload
+[33m7c6e920[m Initial commit
