@@ -218,34 +218,52 @@ class OrderingApp {
             }
         });
 
-        // Admin modal controls
-        document.getElementById('closeAdminModal').addEventListener('click', () => {
-            this.closeAdminModal();
-        });
+        // Admin modal controls (only if elements exist)
+        const closeAdminModal = document.getElementById('closeAdminModal');
+        if (closeAdminModal) {
+            closeAdminModal.addEventListener('click', () => {
+                this.closeAdminModal();
+            });
+        }
 
-        document.getElementById('cancelProductBtn').addEventListener('click', () => {
-            this.closeAdminModal();
-        });
+        const cancelProductBtn = document.getElementById('cancelProductBtn');
+        if (cancelProductBtn) {
+            cancelProductBtn.addEventListener('click', () => {
+                this.closeAdminModal();
+            });
+        }
 
-        document.getElementById('addProductBtn').addEventListener('click', () => {
-            this.openAdminModal();
-        });
+        const addProductBtn = document.getElementById('addProductBtn');
+        if (addProductBtn) {
+            addProductBtn.addEventListener('click', () => {
+                this.openAdminModal();
+            });
+        }
 
-        document.getElementById('adminProductForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.saveProduct();
-        });
+        const adminProductForm = document.getElementById('adminProductForm');
+        if (adminProductForm) {
+            adminProductForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.saveProduct();
+            });
+        }
 
-        document.getElementById('productImage').addEventListener('change', (e) => {
-            this.previewImage(e);
-        });
+        const productImage = document.getElementById('productImage');
+        if (productImage) {
+            productImage.addEventListener('change', (e) => {
+                this.previewImage(e);
+            });
+        }
 
         // Close admin modal when clicking outside
-        document.getElementById('adminProductModal').addEventListener('click', (e) => {
-            if (e.target.id === 'adminProductModal') {
-                this.closeAdminModal();
-            }
-        });
+        const adminProductModal = document.getElementById('adminProductModal');
+        if (adminProductModal) {
+            adminProductModal.addEventListener('click', (e) => {
+                if (e.target.id === 'adminProductModal') {
+                    this.closeAdminModal();
+                }
+            });
+        }
 
         // Checkout modal controls
         document.getElementById('closeCheckoutModal').addEventListener('click', () => {
