@@ -370,7 +370,7 @@ class OrderingApp {
         }
     }
 
-    checkout() {
+    async checkout() {
         if (this.cart.length === 0) return;
 
         const order = {
@@ -389,7 +389,158 @@ class OrderingApp {
         this.renderOrders();
         this.switchTab('orders');
         
+        // ส่ง Flex Message กลับไปในแชท
+        await this.sendOrderFlexMessage(order);
+        
         this.showToast('สั่งซื้อสำเร็จ! หมายเลขคำสั่งซื้อ: ' + order.id);
+    }
+
+    async sendOrderFlexMessage(order) {
+        try {
+            // สร้าง Flex Message
+            const flexMessage = this.createOrderFlexMessage(order);
+            
+            // ส่ง Flex Message กลับไปในแชท
+            if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+                await liff.sendMessages([flexMessage]);
+                this.showToast('ส่งรายการสั่งซื้อไปในแชทแล้ว!');
+            } else {
+                // ถ้าไม่ใช่ LIFF ให้แสดงข้อมูลคำสั่งซื้อ
+                this.showOrderDetails(order);
+            }
+        } catch (error) {
+            console.error('Error sending flex message:', error);
+            this.showToast('ไม่สามารถส่งข้อความได้ กรุณาลองใหม่');
+        }
+    }
+
+    createOrderFlexMessage(order) {
+        const itemsText = order.items.map(item => 
+            `${item.name} x${item.quantity} = ฿${item.price * item.quantity}`
+        ).join('\n');
+
+        return {
+            type: 'flex',
+            altText: `คำสั่งซื้อ #${order.id} - ฿${order.total}`,
+            contents: {
+                type: 'bubble',
+                header: {
+                    type: 'box',
+                    layout: 'vertical',
+                    contents: [
+                        {
+                            type: 'text',
+                            text: '🧊 ร้านขายน้ำแข็ง',
+                            weight: 'bold',
+                            size: 'xl',
+                            color: '#FF8C00'
+                        },
+                        {
+                            type: 'text',
+                            text: `คำสั่งซื้อ #${order.id}`,
+                            size: 'sm',
+                            color: '#666666',
+                            margin: 'md'
+                        }
+                    ]
+                },
+                body: {
+                    type: 'box',
+                    layout: 'vertical',
+                    contents: [
+                        {
+                            type: 'text',
+                            text: 'รายการสินค้า',
+                            weight: 'bold',
+                            size: 'md',
+                            margin: 'md'
+                        },
+                        {
+                            type: 'text',
+                            text: itemsText,
+                            size: 'sm',
+                            color: '#666666',
+                            margin: 'sm',
+                            wrap: true
+                        },
+                        {
+                            type: 'separator',
+                            margin: 'md'
+                        },
+                        {
+                            type: 'box',
+                            layout: 'horizontal',
+                            contents: [
+                                {
+                                    type: 'text',
+                                    text: 'ยอดรวม',
+                                    size: 'md',
+                                    weight: 'bold'
+                                },
+                                {
+                                    type: 'text',
+                                    text: `฿${order.total}`,
+                                    size: 'md',
+                                    weight: 'bold',
+                                    color: '#FF8C00',
+                                    align: 'end'
+                                }
+                            ],
+                            margin: 'md'
+                        }
+                    ]
+                },
+                footer: {
+                    type: 'box',
+                    layout: 'vertical',
+                    contents: [
+                        {
+                            type: 'text',
+                            text: `วันที่: ${order.date}`,
+                            size: 'xs',
+                            color: '#666666',
+                            align: 'center'
+                        },
+                        {
+                            type: 'text',
+                            text: 'ขอบคุณสำหรับการสั่งซื้อ! 🎉',
+                            size: 'sm',
+                            color: '#FF8C00',
+                            align: 'center',
+                            margin: 'md'
+                        }
+                    ]
+                },
+                styles: {
+                    header: {
+                        backgroundColor: '#FFF5E6'
+                    },
+                    footer: {
+                        backgroundColor: '#FFF5E6'
+                    }
+                }
+            }
+        };
+    }
+
+    showOrderDetails(order) {
+        const itemsText = order.items.map(item => 
+            `${item.name} x${item.quantity} = ฿${item.price * item.quantity}`
+        ).join('\n');
+
+        const orderText = `🧊 ร้านขายน้ำแข็ง
+คำสั่งซื้อ #${order.id}
+
+รายการสินค้า:
+${itemsText}
+
+ยอดรวม: ฿${order.total}
+วันที่: ${order.date}
+
+ขอบคุณสำหรับการสั่งซื้อ! 🎉`;
+
+        // แสดงข้อมูลคำสั่งซื้อในหน้าจอ
+        alert(orderText);
     }
 
     renderOrders() {
