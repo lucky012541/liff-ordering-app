@@ -1,0 +1,17 @@
+{
+  "name": "liff-ordering-app",
+  "version": "1.0.0",
+  "description": "Mini app for ordering products with LINE LIFF integration",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server . -p 3000 -o",
+    "dev": "npx live-server --port=3000"
+  },
+  "keywords": ["liff", "line", "ordering", "ecommerce", "mini-app"],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "live-server": "^1.2.2"
+  }
+}
