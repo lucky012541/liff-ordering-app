@@ -77,93 +77,30 @@ class OrderingApp {
         this.products = [
             {
                 id: 1,
-                name: 'ข้าวผัดกุ้ง',
-                description: 'ข้าวผัดกุ้งสไตล์ไทย ใส่ผักสดและกุ้งตัวใหญ่',
-                price: 120,
-                image: 'https://images.unsplash.com/photo-1563379091339-03246963d4f8?w=400&h=300&fit=crop',
-                category: 'food',
-                stock: 50
-            },
-            {
-                id: 2,
-                name: 'ผัดไทย',
-                description: 'ผัดไทยแท้ต้นตำรับ ใส่กุ้งสดและเต้าหู้',
-                price: 80,
-                image: 'https://images.unsplash.com/photo-1559181567-c3190ca9959b?w=400&h=300&fit=crop',
-                category: 'food',
-                stock: 30
-            },
-            {
-                id: 3,
-                name: 'ต้มยำกุ้ง',
-                description: 'ต้มยำกุ้งน้ำใส รสจัดจ้าน ใส่เห็ดและผักสด',
-                price: 150,
-                image: 'https://images.unsplash.com/photo-1559847844-5315695dadae?w=400&h=300&fit=crop',
-                category: 'food',
-                stock: 25
-            },
-            {
-                id: 4,
-                name: 'น้ำส้มคั้นสด',
-                description: 'น้ำส้มคั้นสด 100% ไม่ใส่น้ำตาล',
-                price: 45,
-                image: 'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=400&h=300&fit=crop',
-                category: 'drink',
+                name: 'น้ำแข็ง เล็ก',
+                description: 'น้ำแข็งก้อนเล็ก เหมาะสำหรับเครื่องดื่มเย็น',
+                price: 40,
+                image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+                category: 'ice',
                 stock: 100
             },
             {
-                id: 5,
-                name: 'ชาเขียว',
-                description: 'ชาเขียวญี่ปุ่นแท้ รสชาติเข้มข้น',
-                price: 35,
-                image: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&h=300&fit=crop',
-                category: 'drink',
+                id: 2,
+                name: 'น้ำแข็งใหญ่',
+                description: 'น้ำแข็งก้อนใหญ่ เหมาะสำหรับเก็บอาหารและเครื่องดื่ม',
+                price: 40,
+                image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+                category: 'ice',
                 stock: 80
             },
             {
-                id: 6,
-                name: 'กาแฟเย็น',
-                description: 'กาแฟเย็นสูตรพิเศษ หวานมันเข้มข้น',
-                price: 55,
-                image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400&h=300&fit=crop',
-                category: 'drink',
-                stock: 60
-            },
-            {
-                id: 7,
-                name: 'บัวลอย',
-                description: 'บัวลอยน้ำกะทิ หวานหอม ใส่ถั่วแดง',
+                id: 3,
+                name: 'น้ำแข็งบด',
+                description: 'น้ำแข็งบดละเอียด เหมาะสำหรับเครื่องดื่มเย็น',
                 price: 40,
-                image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=300&fit=crop',
-                category: 'dessert',
-                stock: 40
-            },
-            {
-                id: 8,
-                name: 'ทับทิมกรอบ',
-                description: 'ทับทิมกรอบน้ำกะทิ หวานเย็นชื่นใจ',
-                price: 35,
-                image: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400&h=300&fit=crop',
-                category: 'dessert',
-                stock: 35
-            },
-            {
-                id: 9,
-                name: 'ส้มตำ',
-                description: 'ส้มตำไทยแท้ รสจัดจ้าน ใส่มะละกอสด',
-                price: 60,
-                image: 'https://images.unsplash.com/photo-1559847844-5315695dadae?w=400&h=300&fit=crop',
-                category: 'food',
-                stock: 45
-            },
-            {
-                id: 10,
-                name: 'น้ำมะนาว',
-                description: 'น้ำมะนาวเย็น เปรี้ยวหวานชื่นใจ',
-                price: 30,
-                image: 'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=400&h=300&fit=crop',
-                category: 'drink',
-                stock: 90
+                image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+                category: 'ice',
+                stock: 120
             }
         ];
 
