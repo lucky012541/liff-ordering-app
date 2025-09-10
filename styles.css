@@ -7,7 +7,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #ff8c00 0%, #ff6347 100%);
     min-height: 100vh;
     color: #333;
 }
@@ -36,7 +36,7 @@ body {
 }
 
 .header h1 {
-    color: #667eea;
+    color: #ff8c00;
     font-size: 1.5rem;
     font-weight: 700;
 }
@@ -56,13 +56,13 @@ body {
     cursor: pointer;
     padding: 10px;
     border-radius: 50%;
-    background: #667eea;
+    background: #ff8c00;
     color: white;
     transition: all 0.3s ease;
 }
 
 .cart-icon:hover {
-    background: #5a6fd8;
+    background: #ff6347;
     transform: scale(1.1);
 }
 
@@ -108,14 +108,14 @@ body {
 }
 
 .nav-tab:hover {
-    background: rgba(102, 126, 234, 0.1);
-    color: #667eea;
+    background: rgba(255, 140, 0, 0.1);
+    color: #ff8c00;
 }
 
 .nav-tab.active {
-    color: #667eea;
-    border-bottom-color: #667eea;
-    background: rgba(102, 126, 234, 0.1);
+    color: #ff8c00;
+    border-bottom-color: #ff8c00;
+    background: rgba(255, 140, 0, 0.1);
 }
 
 .nav-tab i {
@@ -154,8 +154,8 @@ body {
 
 .search-bar input:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: #ff8c00;
+    box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.1);
 }
 
 .search-bar i {
@@ -163,7 +163,7 @@ body {
     right: 20px;
     top: 50%;
     transform: translateY(-50%);
-    color: #667eea;
+    color: #ff8c00;
     font-size: 1.2rem;
 }
 
@@ -190,13 +190,13 @@ body {
 }
 
 .category-btn:hover {
-    border-color: #667eea;
-    color: #667eea;
+    border-color: #ff8c00;
+    color: #ff8c00;
 }
 
 .category-btn.active {
-    background: #667eea;
-    border-color: #667eea;
+    background: #ff8c00;
+    border-color: #ff8c00;
     color: white;
 }
 
@@ -250,14 +250,14 @@ body {
 .product-price {
     font-size: 1.3rem;
     font-weight: 700;
-    color: #667eea;
+    color: #ff8c00;
     margin-bottom: 15px;
 }
 
 .add-to-cart {
     width: 100%;
     padding: 12px;
-    background: #667eea;
+    background: #ff8c00;
     color: white;
     border: none;
     border-radius: 8px;
