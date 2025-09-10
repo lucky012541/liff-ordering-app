@@ -270,6 +270,29 @@ class OrderingApp {
                 this.closeCheckoutModal();
             }
         });
+
+        // Real-time form validation
+        const customerName = document.getElementById('customerName');
+        const customerPhone = document.getElementById('customerPhone');
+        const deliveryAddress = document.getElementById('deliveryAddress');
+
+        if (customerName) {
+            customerName.addEventListener('input', () => {
+                this.validateField(customerName, 'กรุณากรอกชื่อ-นามสกุล');
+            });
+        }
+
+        if (customerPhone) {
+            customerPhone.addEventListener('input', () => {
+                this.validatePhoneField(customerPhone);
+            });
+        }
+
+        if (deliveryAddress) {
+            deliveryAddress.addEventListener('input', () => {
+                this.validateField(deliveryAddress, 'กรุณากรอกที่อยู่จัดส่ง');
+            });
+        }
     }
 
     switchTab(tabName) {
@@ -537,8 +560,9 @@ class OrderingApp {
         
         // Validate phone number
         const phone = document.getElementById('customerPhone').value;
-        if (!/^[0-9]{10}$/.test(phone.replace(/-/g, ''))) {
-            this.showToast('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (10 หลัก)', 'error');
+        const cleanPhone = phone.replace(/\D/g, ''); // Remove all non-digits
+        if (cleanPhone.length < 9 || cleanPhone.length > 11) {
+            this.showToast('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (9-11 หลัก)', 'error');
             document.getElementById('customerPhone').focus();
             return false;
         }
@@ -561,6 +585,27 @@ class OrderingApp {
     savePaymentMethod() {
         const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
         this.paymentMethod = selectedPayment ? selectedPayment.value : 'cash';
+    }
+
+    validateField(field, errorMessage) {
+        if (field.value.trim()) {
+            field.classList.remove('error');
+            field.classList.add('valid');
+        } else {
+            field.classList.remove('valid');
+            field.classList.add('error');
+        }
+    }
+
+    validatePhoneField(field) {
+        const cleanPhone = field.value.replace(/\D/g, '');
+        if (cleanPhone.length >= 9 && cleanPhone.length <= 11) {
+            field.classList.remove('error');
+            field.classList.add('valid');
+        } else {
+            field.classList.remove('valid');
+            field.classList.add('error');
+        }
     }
 
     showDeliveryStep() {
@@ -671,150 +716,110 @@ class OrderingApp {
 
     async sendOrderFlexMessage(order) {
         try {
+            this.showToast('กำลังส่งคำสั่งซื้อ...', 'info');
+
             // สร้าง Flex Message
             const flexMessage = this.createOrderFlexMessage(order);
-            
+
             // ส่ง Flex Message กลับไปในแชท
             if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
                 await liff.sendMessages([flexMessage]);
-                
+
                 // ส่งข้อความเพิ่มเติมสำหรับเจ้าของร้าน
                 const ownerMessage = {
                     type: 'text',
                     text: `📋 คำสั่งซื้อใหม่ #${order.id}\n\n💡 เจ้าของร้าน: ตอบกลับ "ยืนยัน" หรือ "ยกเลิก" เพื่อยืนยันคำสั่งซื้อ\n\n📱 หรือเปิดแอปเพื่อดูรายละเอียดเพิ่มเติม`
                 };
-                
+
                 await liff.sendMessages([ownerMessage]);
+
+                this.showToast('ส่งคำสั่งซื้อสำเร็จ! 🎉', 'success');
             } else {
                 // ถ้าไม่ใช่ LIFF ให้แสดงข้อมูลคำสั่งซื้อ
                 this.showOrderDetails(order);
+                this.showToast('แสดงรายละเอียดคำสั่งซื้อ', 'info');
             }
         } catch (error) {
             console.error('Error sending flex message:', error);
-            this.showToast('ไม่สามารถส่งข้อความได้ กรุณาลองใหม่');
+
+            // แสดงข้อความ error ที่เป็นมิตรกับผู้ใช้
+            let errorMessage = 'ไม่สามารถส่งข้อความได้';
+
+            if (error.message.includes('permission')) {
+                errorMessage = 'ไม่มีสิทธิ์ส่งข้อความ กรุณาอนุญาตสิทธิ์';
+            } else if (error.message.includes('network')) {
+                errorMessage = 'ปัญหาการเชื่อมต่อ กรุณาตรวจสอบอินเทอร์เน็ต';
+            } else if (error.message.includes('quota')) {
+                errorMessage = 'ส่งข้อความได้ไม่เกินจำนวนที่กำหนด';
+            }
+
+            this.showToast(`${errorMessage} กรุณาลองใหม่`, 'error');
+
+            // แสดงรายละเอียดคำสั่งซื้อเป็น fallback
+            setTimeout(() => {
+                this.showOrderDetails(order);
+            }, 2000);
         }
     }
 
     createOrderFlexMessage(order) {
-        const itemsText = order.items.map(item => 
-            `${item.name} x${item.quantity} = ฿${item.price * item.quantity}`
-        ).join('\n');
-
         const paymentMethodText = {
-            'cash': 'เงินสด',
-            'transfer': 'โอนเงิน',
-            'promptpay': 'PromptPay'
+            'cash': '💵 เงินสด',
+            'transfer': '🏦 โอนเงิน',
+            'promptpay': '📱 PromptPay'
+        };
+
+        const paymentIcons = {
+            'cash': '💵',
+            'transfer': '🏦',
+            'promptpay': '📱'
         };
 
         return {
             type: 'flex',
-            altText: `คำสั่งซื้อ #${order.id} - ฿${order.total}`,
+            altText: `🧊 คำสั่งซื้อ #${order.id} - ฿${order.total}`,
             contents: {
                 type: 'bubble',
+                size: 'giga',
                 header: {
                     type: 'box',
                     layout: 'vertical',
                     contents: [
                         {
-                            type: 'text',
-                            text: '🧊 ร้านขายน้ำแข็ง',
-                            weight: 'bold',
-                            size: 'xl',
-                            color: '#FFFFFF'
-                        },
-                        {
-                            type: 'text',
-                            text: `คำสั่งซื้อ #${order.id}`,
-                            size: 'sm',
-                            color: '#FFFFFF',
-                            margin: 'md'
-                        }
-                    ]
-                },
-                body: {
-                    type: 'box',
-                    layout: 'vertical',
-                    contents: [
-                        {
-                            type: 'text',
-                            text: '👤 ข้อมูลลูกค้า',
-                            weight: 'bold',
-                            size: 'md',
-                            margin: 'md',
-                            color: '#FF8C00'
-                        },
-                        {
-                            type: 'text',
-                            text: `ชื่อ: ${order.deliveryInfo.customerName}`,
-                            size: 'sm',
-                            color: '#333333',
-                            margin: 'sm'
-                        },
-                        {
-                            type: 'text',
-                            text: `เบอร์โทร: ${order.deliveryInfo.customerPhone}`,
-                            size: 'sm',
-                            color: '#333333',
-                            margin: 'xs'
-                        },
-                        {
-                            type: 'text',
-                            text: `ที่อยู่: ${order.deliveryInfo.deliveryAddress}`,
-                            size: 'sm',
-                            color: '#333333',
-                            margin: 'xs',
-                            wrap: true
-                        },
-                        ...(order.deliveryInfo.deliveryNote ? [{
-                            type: 'text',
-                            text: `หมายเหตุ: ${order.deliveryInfo.deliveryNote}`,
-                            size: 'sm',
-                            color: '#666666',
-                            margin: 'xs',
-                            wrap: true
-                        }] : []),
-                        {
-                            type: 'separator',
-                            margin: 'md'
-                        },
-                        {
-                            type: 'text',
-                            text: '💳 วิธีการชำระเงิน',
-                            weight: 'bold',
-                            size: 'md',
-                            margin: 'md',
-                            color: '#FF8C00'
-                        },
-                        {
-                            type: 'text',
-                            text: paymentMethodText[order.paymentMethod] || 'เงินสด',
-                            size: 'sm',
-                            color: '#333333',
-                            margin: 'sm'
-                        },
-                        {
-                            type: 'separator',
-                            margin: 'md'
-                        },
-                        {
-                            type: 'text',
-                            text: '🛒 รายการสินค้า',
-                            weight: 'bold',
-                            size: 'md',
-                            margin: 'md',
-                            color: '#FF8C00'
-                        },
-                        {
-                            type: 'text',
-                            text: itemsText,
-                            size: 'sm',
-                            color: '#333333',
-                            margin: 'sm',
-                            wrap: true
-                        },
-                        {
-                            type: 'separator',
-                            margin: 'md'
+                            type: 'box',
+                            layout: 'horizontal',
+                            contents: [
+                                {
+                                    type: 'text',
+                                    text: '🧊',
+                                    size: 'xl',
+                                    align: 'center',
+                                    flex: 1
+                                },
+                                {
+                                    type: 'box',
+                                    layout: 'vertical',
+                                    contents: [
+                                        {
+                                            type: 'text',
+                                            text: 'ร้านขายน้ำแข็ง',
+                                            weight: 'bold',
+                                            size: 'lg',
+                                            color: '#FFFFFF',
+                                            align: 'center'
+                                        },
+                                        {
+                                            type: 'text',
+                                            text: '❄️ บริการจัดส่งน้ำแข็ง ❄️',
+                                            size: 'xs',
+                                            color: '#FFFFFF',
+                                            align: 'center',
+                                            margin: 'sm'
+                                        }
+                                    ],
+                                    flex: 4
+                                }
+                            ]
                         },
                         {
                             type: 'box',
@@ -822,18 +827,241 @@ class OrderingApp {
                             contents: [
                                 {
                                     type: 'text',
-                                    text: 'ยอดรวม',
-                                    size: 'md',
-                                    weight: 'bold',
-                                    color: '#FF8C00'
+                                    text: `📋 คำสั่งซื้อ #${order.id}`,
+                                    size: 'sm',
+                                    color: '#FFFFFF',
+                                    weight: 'bold'
                                 },
                                 {
                                     type: 'text',
-                                    text: `฿${order.total}`,
-                                    size: 'md',
-                                    weight: 'bold',
-                                    color: '#FF8C00',
+                                    text: `⏰ ${order.date}`,
+                                    size: 'xs',
+                                    color: '#FFFFFF',
                                     align: 'end'
+                                }
+                            ],
+                            margin: 'md'
+                        }
+                    ],
+                    backgroundColor: '#FF8C00',
+                    paddingAll: 'lg'
+                },
+                body: {
+                    type: 'box',
+                    layout: 'vertical',
+                    contents: [
+                        // Customer Info Section
+                        {
+                            type: 'box',
+                            layout: 'vertical',
+                            contents: [
+                                {
+                                    type: 'box',
+                                    layout: 'horizontal',
+                                    contents: [
+                                        {
+                                            type: 'text',
+                                            text: '👤',
+                                            size: 'sm',
+                                            flex: 1
+                                        },
+                                        {
+                                            type: 'text',
+                                            text: 'ข้อมูลลูกค้า',
+                                            weight: 'bold',
+                                            size: 'md',
+                                            color: '#FF8C00',
+                                            flex: 5
+                                        }
+                                    ]
+                                },
+                                {
+                                    type: 'box',
+                                    layout: 'vertical',
+                                    contents: [
+                                        {
+                                            type: 'text',
+                                            text: `📛 ${order.deliveryInfo.customerName}`,
+                                            size: 'sm',
+                                            color: '#333333',
+                                            margin: 'sm'
+                                        },
+                                        {
+                                            type: 'text',
+                                            text: `📞 ${order.deliveryInfo.customerPhone}`,
+                                            size: 'sm',
+                                            color: '#333333',
+                                            margin: 'xs'
+                                        },
+                                        {
+                                            type: 'text',
+                                            text: `🏠 ${order.deliveryInfo.deliveryAddress}`,
+                                            size: 'sm',
+                                            color: '#333333',
+                                            margin: 'xs',
+                                            wrap: true
+                                        },
+                                        ...(order.deliveryInfo.deliveryNote ? [{
+                                            type: 'text',
+                                            text: `📝 หมายเหตุ: ${order.deliveryInfo.deliveryNote}`,
+                                            size: 'sm',
+                                            color: '#666666',
+                                            margin: 'xs',
+                                            wrap: true
+                                        }] : [])
+                                    ],
+                                    margin: 'md',
+                                    backgroundColor: '#F8F9FA',
+                                    cornerRadius: 'md',
+                                    paddingAll: 'md'
+                                }
+                            ],
+                            margin: 'md'
+                        },
+
+                        // Payment Method Section
+                        {
+                            type: 'box',
+                            layout: 'vertical',
+                            contents: [
+                                {
+                                    type: 'box',
+                                    layout: 'horizontal',
+                                    contents: [
+                                        {
+                                            type: 'text',
+                                            text: '💳',
+                                            size: 'sm',
+                                            flex: 1
+                                        },
+                                        {
+                                            type: 'text',
+                                            text: 'วิธีการชำระเงิน',
+                                            weight: 'bold',
+                                            size: 'md',
+                                            color: '#FF8C00',
+                                            flex: 5
+                                        }
+                                    ]
+                                },
+                                {
+                                    type: 'box',
+                                    layout: 'horizontal',
+                                    contents: [
+                                        {
+                                            type: 'text',
+                                            text: paymentIcons[order.paymentMethod] || '💵',
+                                            size: 'md',
+                                            flex: 1
+                                        },
+                                        {
+                                            type: 'text',
+                                            text: paymentMethodText[order.paymentMethod] || '💵 เงินสด',
+                                            size: 'sm',
+                                            color: '#333333',
+                                            weight: 'bold',
+                                            flex: 5
+                                        }
+                                    ],
+                                    margin: 'md',
+                                    backgroundColor: '#FFF3CD',
+                                    cornerRadius: 'md',
+                                    paddingAll: 'md'
+                                }
+                            ],
+                            margin: 'md'
+                        },
+
+                        // Order Items Section
+                        {
+                            type: 'box',
+                            layout: 'vertical',
+                            contents: [
+                                {
+                                    type: 'box',
+                                    layout: 'horizontal',
+                                    contents: [
+                                        {
+                                            type: 'text',
+                                            text: '🛒',
+                                            size: 'sm',
+                                            flex: 1
+                                        },
+                                        {
+                                            type: 'text',
+                                            text: 'รายการสินค้า',
+                                            weight: 'bold',
+                                            size: 'md',
+                                            color: '#FF8C00',
+                                            flex: 5
+                                        }
+                                    ]
+                                },
+                                ...order.items.map(item => ({
+                                    type: 'box',
+                                    layout: 'horizontal',
+                                    contents: [
+                                        {
+                                            type: 'text',
+                                            text: `• ${item.name}`,
+                                            size: 'sm',
+                                            color: '#333333',
+                                            flex: 4,
+                                            wrap: true
+                                        },
+                                        {
+                                            type: 'text',
+                                            text: `x${item.quantity}`,
+                                            size: 'sm',
+                                            color: '#666666',
+                                            flex: 1,
+                                            align: 'center'
+                                        },
+                                        {
+                                            type: 'text',
+                                            text: `฿${item.price * item.quantity}`,
+                                            size: 'sm',
+                                            color: '#FF8C00',
+                                            weight: 'bold',
+                                            flex: 2,
+                                            align: 'end'
+                                        }
+                                    ],
+                                    margin: 'xs',
+                                    backgroundColor: '#F8F9FA',
+                                    cornerRadius: 'sm',
+                                    paddingAll: 'sm'
+                                })),
+                                {
+                                    type: 'separator',
+                                    margin: 'md'
+                                },
+                                {
+                                    type: 'box',
+                                    layout: 'horizontal',
+                                    contents: [
+                                        {
+                                            type: 'text',
+                                            text: '💰 ยอดรวมทั้งสิ้น',
+                                            size: 'md',
+                                            weight: 'bold',
+                                            color: '#FF8C00',
+                                            flex: 3
+                                        },
+                                        {
+                                            type: 'text',
+                                            text: `฿${order.total}`,
+                                            size: 'lg',
+                                            weight: 'bold',
+                                            color: '#FF8C00',
+                                            flex: 2,
+                                            align: 'end'
+                                        }
+                                    ],
+                                    margin: 'md',
+                                    backgroundColor: '#FFF3CD',
+                                    cornerRadius: 'md',
+                                    paddingAll: 'md'
                                 }
                             ],
                             margin: 'md'
@@ -845,34 +1073,53 @@ class OrderingApp {
                     layout: 'vertical',
                     contents: [
                         {
-                            type: 'text',
-                            text: `วันที่: ${order.date}`,
-                            size: 'xs',
-                            color: '#FFFFFF',
-                            align: 'center'
-                        },
-                        {
-                            type: 'text',
-                            text: 'ขอบคุณสำหรับการสั่งซื้อ! 🎉',
-                            size: 'sm',
-                            color: '#FFFFFF',
-                            align: 'center',
+                            type: 'box',
+                            layout: 'horizontal',
+                            contents: [
+                                {
+                                    type: 'text',
+                                    text: '🎉 ขอบคุณสำหรับการสั่งซื้อ!',
+                                    size: 'sm',
+                                    color: '#FFFFFF',
+                                    weight: 'bold',
+                                    align: 'center',
+                                    wrap: true
+                                }
+                            ],
+                            backgroundColor: '#28A745',
+                            cornerRadius: 'lg',
+                            paddingAll: 'md',
                             margin: 'md'
                         },
                         {
-                            type: 'separator',
-                            margin: 'md'
-                        },
-                        {
-                            type: 'text',
-                            text: '💡 เจ้าของร้าน: ตอบกลับ "ยืนยัน" หรือ "ยกเลิก" เพื่อยืนยันคำสั่งซื้อ',
-                            size: 'xs',
-                            color: '#FFFFFF',
-                            align: 'center',
-                            margin: 'md',
-                            wrap: true
+                            type: 'box',
+                            layout: 'vertical',
+                            contents: [
+                                {
+                                    type: 'text',
+                                    text: '📢 สำหรับเจ้าของร้าน:',
+                                    size: 'xs',
+                                    color: '#FFFFFF',
+                                    weight: 'bold',
+                                    align: 'center'
+                                },
+                                {
+                                    type: 'text',
+                                    text: 'ตอบกลับ "ยืนยัน" หรือ "ยกเลิก" เพื่อจัดการคำสั่งซื้อ',
+                                    size: 'xs',
+                                    color: '#FFFFFF',
+                                    align: 'center',
+                                    margin: 'xs',
+                                    wrap: true
+                                }
+                            ],
+                            backgroundColor: '#FF8C00',
+                            cornerRadius: 'md',
+                            paddingAll: 'sm'
                         }
-                    ]
+                    ],
+                    backgroundColor: '#FF8C00',
+                    paddingAll: 'lg'
                 },
                 styles: {
                     header: {
