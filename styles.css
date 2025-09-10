@@ -268,7 +268,7 @@ body {
 }
 
 .add-to-cart:hover {
-    background: #5a6fd8;
+    background: #ff6347;
     transform: translateY(-2px);
 }
 
@@ -309,7 +309,7 @@ body {
 }
 
 .cart-item-price {
-    color: #667eea;
+    color: #ff8c00;
     font-weight: 600;
 }
 
@@ -334,9 +334,9 @@ body {
 }
 
 .qty-btn:hover {
-    background: #667eea;
+    background: #ff8c00;
     color: white;
-    border-color: #667eea;
+    border-color: #ff8c00;
 }
 
 .quantity {
@@ -376,7 +376,7 @@ body {
 .checkout-btn {
     width: 100%;
     padding: 15px;
-    background: #28a745;
+    background: #ff8c00;
     color: white;
     border: none;
     border-radius: 10px;
@@ -387,7 +387,7 @@ body {
 }
 
 .checkout-btn:hover:not(:disabled) {
-    background: #218838;
+    background: #ff6347;
     transform: translateY(-2px);
 }
 
@@ -421,7 +421,7 @@ body {
 
 .order-id {
     font-weight: 600;
-    color: #667eea;
+    color: #ff8c00;
 }
 
 .order-date {
@@ -460,7 +460,7 @@ body {
 
 .order-total {
     font-weight: 600;
-    color: #667eea;
+    color: #ff8c00;
 }
 
 /* Modal Styles */
@@ -560,7 +560,7 @@ body {
 .price {
     font-size: 1.8rem;
     font-weight: 700;
-    color: #667eea;
+    color: #ff8c00;
 }
 
 .quantity-controls {
@@ -585,7 +585,7 @@ body {
 .add-to-cart-btn {
     width: 100%;
     padding: 15px;
-    background: #667eea;
+    background: #ff8c00;
     color: white;
     border: none;
     border-radius: 10px;
@@ -596,7 +596,7 @@ body {
 }
 
 .add-to-cart-btn:hover {
-    background: #5a6fd8;
+    background: #ff6347;
     transform: translateY(-2px);
 }
 
