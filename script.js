@@ -20,38 +20,133 @@ class OrderingApp {
         this.showLoading(true);
 
         try {
-            // Wait for LIFF initialization to complete
-            if (window.liffInitPromise) {
-                await window.liffInitPromise;
+            console.log('Starting app initialization...');
+            
+            // Wait for LIFF initialization to complete with timeout
+            try {
+                if (window.liffInitPromise) {
+                    console.log('Waiting for LIFF initialization...');
+                    const timeoutPromise = new Promise((_, reject) => {
+                        setTimeout(() => reject(new Error('LIFF initialization timeout')), 5000);
+                    });
+                    
+                    await Promise.race([window.liffInitPromise, timeoutPromise])
+                        .catch(error => {
+                            console.warn('LIFF initialization issue:', error.message);
+                            // Continue execution even if LIFF times out
+                        });
+                    
+                    console.log('LIFF initialization completed or timed out');
+                }
+            } catch (liffError) {
+                console.warn('Error waiting for LIFF:', liffError);
+                // Continue execution even if LIFF fails
             }
 
             // Initialize LIFF
-            await this.initializeLIFF();
+            try {
+                await this.initializeLIFF();
+                console.log('LIFF initialization successful');
+            } catch (liffError) {
+                console.warn('Error initializing LIFF:', liffError);
+                // Continue execution even if LIFF fails
+            }
 
-            // Load sample data
-            this.loadSampleData();
+            try {
+                // Load sample data
+                console.log('Loading sample data...');
+                this.loadSampleData();
+                console.log('Sample data loaded successfully');
+            } catch (dataError) {
+                console.error('Error loading data:', dataError);
+                this.showToast('เกิดข้อผิดพลาดในการโหลดข้อมูล กำลังใช้ข้อมูลสำรอง', 'warning');
+                // Use fallback data if loading fails
+                this.useFallbackData();
+                console.log('Fallback data loaded');
+            }
 
-            // Setup event listeners
-            this.setupEventListeners();
+            try {
+                // Setup event listeners
+                console.log('Setting up event listeners...');
+                this.setupEventListeners();
+                console.log('Event listeners set up successfully');
+            } catch (eventError) {
+                console.error('Error setting up event listeners:', eventError);
+                // Continue execution even if event listeners fail
+            }
 
-            // Render initial content
-            this.renderProducts();
-            this.updateCartUI();
-            this.renderOrders();
-            this.renderAdminProducts();
+            try {
+                // Render initial content
+                console.log('Rendering initial content...');
+                
+                // ตรวจสอบว่ามีองค์ประกอบ HTML ก่อนเรียกใช้งาน
+                const productsGrid = document.getElementById('productsGrid');
+                if (productsGrid) {
+                    this.renderProducts();
+                    console.log('Products rendered successfully');
+                } else {
+                    console.warn('Products grid element not found');
+                }
+                
+                this.updateCartUI();
+                console.log('Cart UI updated');
+                
+                const ordersContainer = document.getElementById('ordersContainer');
+                if (ordersContainer) {
+                    this.renderOrders();
+                    console.log('Orders rendered successfully');
+                } else {
+                    console.warn('Orders container element not found');
+                }
+                
+                // ตรวจสอบว่ามีองค์ประกอบ HTML ก่อนเรียกใช้งาน
+                if (document.getElementById('adminProductsContainer')) {
+                    this.renderAdminProducts();
+                    console.log('Admin products rendered successfully');
+                }
+            } catch (renderError) {
+                console.error('Error rendering content:', renderError);
+                this.showToast('เกิดข้อผิดพลาดในการแสดงผล กรุณารีเฟรชหน้าจอ', 'error');
+            }
 
+            console.log('App initialization completed successfully');
             this.showLoading(false);
         } catch (error) {
             console.error('Error initializing app:', error);
-            this.showToast('เกิดข้อผิดพลาดในการโหลดแอป', 'error');
+            this.showToast('เกิดข้อผิดพลาดในการโหลดแอป กรุณาลองใหม่อีกครั้ง', 'error');
             this.showLoading(false);
         }
+    }
+    
+    useFallbackData() {
+        // Fallback data in case loading fails
+        this.products = [
+            {
+                id: 1,
+                name: 'น้ำแข็ง',
+                description: 'น้ำแข็งก้อนเล็ก',
+                price: 40,
+                icon: 'fas fa-snowflake',
+                category: 'ice',
+                stock: 100
+            },
+            {
+                id: 4,
+                name: 'น้ำดื่ม',
+                description: 'น้ำดื่มสะอาด',
+                price: 15,
+                icon: 'fas fa-tint',
+                category: 'water',
+                stock: 200
+            }
+        ];
     }
 
     async initializeLIFF() {
         return new Promise((resolve, reject) => {
             if (typeof liff === 'undefined') {
                 // LIFF not available, use mock data
+                console.warn('LIFF SDK not available, using mock data');
                 this.currentUser = {
                     displayName: 'ผู้ใช้ทดสอบ',
                     userId: 'test_user_123',
@@ -62,19 +157,109 @@ class OrderingApp {
                 return;
             }
 
-            liff.init({ liffId: '2006986568-yjrOkKqm' }, () => {
-                if (liff.isLoggedIn()) {
-                    liff.getProfile().then(profile => {
+            try {
+                // ใช้ค่า liffId จาก HTML
+                const liffId = '2006986568-yjrOkKqm';
+                console.log('Initializing LIFF with ID:', liffId);
+                
+                if (!liffId) {
+                    console.error('No liffId available');
+                    this.useMockUser();
+                    resolve();
+                    return;
+                }
+                
+                // ตรวจสอบว่า LIFF ถูกเริ่มต้นแล้วหรือไม่โดยใช้ liff.getOS()
+                try {
+                    // ถ้าเรียก getOS ได้แสดงว่า LIFF ถูกเริ่มต้นแล้ว
+                    liff.getOS();
+                    console.log('LIFF already initialized, OS:', liff.getOS());
+                    this.continueWithLiff(resolve);
+                } catch (e) {
+                    // ถ้าเรียก getOS ไม่ได้แสดงว่า LIFF ยังไม่ถูกเริ่มต้น
+                    console.log('LIFF not initialized, initializing now...');
+                    
+                    liff.init({ liffId: liffId })
+                        .then(() => {
+                            console.log('LIFF initialized in script.js');
+                            this.continueWithLiff(resolve);
+                        })
+                        .catch(error => {
+                            console.error('Error initializing LIFF in script.js:', error);
+                            this.useMockUser();
+                            resolve();
+                        });
+                }
+            } catch (error) {
+                console.error('Error in LIFF initialization:', error);
+                // Fallback to mock data
+                this.useMockUser();
+                resolve();
+            }
+        });
+    }
+    
+    continueWithLiff(resolve) {
+        try {
+            // Check if running in LINE app
+            if (liff.isInClient()) {
+                // Running in LINE app
+                liff.getProfile()
+                    .then(profile => {
                         this.currentUser = profile;
                         this.updateUserInfo();
                         resolve();
-                    }).catch(reject);
+                    })
+                    .catch(error => {
+                        console.error('Error getting LINE profile:', error);
+                        // Fallback to mock data
+                        this.useMockUser();
+                        resolve();
+                    });
+            } else {
+                // Not in LINE app
+                if (liff.isLoggedIn()) {
+                    liff.getProfile()
+                        .then(profile => {
+                            this.currentUser = profile;
+                            this.updateUserInfo();
+                            resolve();
+                        })
+                        .catch(error => {
+                            console.error('Error getting LINE profile:', error);
+                            // Fallback to mock data
+                            this.useMockUser();
+                            resolve();
+                        });
                 } else {
-                    liff.login();
+                    // Not logged in, try to login
+                    try {
+                        liff.login();
+                    } catch (error) {
+                        console.error('Error during LIFF login:', error);
+                        // Fallback to mock data
+                        this.useMockUser();
+                        resolve();
+                    }
                 }
-            }, reject);
-        });
+            }
+        } catch (error) {
+            console.error('Error in LIFF continuation:', error);
+            // Fallback to mock data
+            this.useMockUser();
+            resolve();
+        }
     }
+    
+    useMockUser() {
+        console.warn('Using mock user data');
+        this.currentUser = {
+            displayName: 'ผู้ใช้ทดสอบ',
+            userId: 'test_user_123',
+            pictureUrl: 'https://via.placeholder.com/50'
+        };
+        this.updateUserInfo();
+     }
 
     updateUserInfo() {
         const userNameElement = document.getElementById('userName');
@@ -150,16 +335,56 @@ class OrderingApp {
             }
         ];
 
-        // Load cart from localStorage
-        const savedCart = localStorage.getItem('liff_cart');
-        if (savedCart) {
-            this.cart = JSON.parse(savedCart);
-        }
+        // Load data from localStorage
+        this.loadFromLocalStorage();
+    }
+    
+    loadFromLocalStorage() {
+        try {
+            // Load cart from localStorage
+            const savedCart = localStorage.getItem('liff_cart');
+            if (savedCart) {
+                try {
+                    const parsedCart = JSON.parse(savedCart);
+                    // Validate cart data
+                    if (Array.isArray(parsedCart)) {
+                        this.cart = parsedCart;
+                    } else {
+                        console.error('Invalid cart data format, resetting cart');
+                        this.cart = [];
+                        this.saveCart(); // Reset with empty cart
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing cart data:', parseError);
+                    this.cart = [];
+                    this.saveCart(); // Reset with empty cart
+                }
+            }
 
-        // Load orders from localStorage
-        const savedOrders = localStorage.getItem('liff_orders');
-        if (savedOrders) {
-            this.orders = JSON.parse(savedOrders);
+            // Load orders from localStorage
+            const savedOrders = localStorage.getItem('liff_orders');
+            if (savedOrders) {
+                try {
+                    const parsedOrders = JSON.parse(savedOrders);
+                    // Validate orders data
+                    if (Array.isArray(parsedOrders)) {
+                        this.orders = parsedOrders;
+                    } else {
+                        console.error('Invalid orders data format, resetting orders');
+                        this.orders = [];
+                        this.saveOrders(); // Reset with empty orders
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing orders data:', parseError);
+                    this.orders = [];
+                    this.saveOrders(); // Reset with empty orders
+                }
+            }
+        } catch (error) {
+            console.error('Error loading data from localStorage:', error);
+            // Initialize with empty arrays if loading fails
+            this.cart = [];
+            this.orders = [];
         }
     }
 
@@ -298,24 +523,88 @@ class OrderingApp {
         const customerName = document.getElementById('customerName');
         const customerPhone = document.getElementById('customerPhone');
         const deliveryAddress = document.getElementById('deliveryAddress');
+        const nextBtn = document.getElementById('nextBtn');
 
+        const validateForm = () => {
+            let isValid = true;
+
+            // Validate name
+            if (customerName && !customerName.value.trim()) {
+                customerName.classList.add('error');
+                customerName.classList.remove('valid');
+                isValid = false;
+            } else if (customerName) {
+                customerName.classList.remove('error');
+                customerName.classList.add('valid');
+            }
+
+            // Validate phone
+            if (customerPhone) {
+                const cleanPhone = customerPhone.value.replace(/\D/g, '');
+                if (cleanPhone.length < 9 || cleanPhone.length > 11) {
+                    customerPhone.classList.add('error');
+                    customerPhone.classList.remove('valid');
+                    isValid = false;
+                } else {
+                    customerPhone.classList.remove('error');
+                    customerPhone.classList.add('valid');
+                }
+            }
+
+            // Validate address
+            if (deliveryAddress && !deliveryAddress.value.trim()) {
+                deliveryAddress.classList.add('error');
+                deliveryAddress.classList.remove('valid');
+                isValid = false;
+            } else if (deliveryAddress) {
+                deliveryAddress.classList.remove('error');
+                deliveryAddress.classList.add('valid');
+            }
+
+            // Update next button state and error messages
+            if (nextBtn) {
+                nextBtn.disabled = !isValid;
+                nextBtn.style.opacity = isValid ? '1' : '0.5';
+                nextBtn.style.cursor = isValid ? 'pointer' : 'not-allowed';
+
+                // Show/hide error messages
+                const nameError = document.getElementById('nameError');
+                const phoneError = document.getElementById('phoneError');
+                const addressError = document.getElementById('addressError');
+
+                if (nameError) {
+                    nameError.textContent = customerName && !customerName.value.trim() ? 'กรุณากรอกชื่อ-นามสกุล' : '';
+                    nameError.style.display = customerName && !customerName.value.trim() ? 'block' : 'none';
+                }
+
+                if (phoneError) {
+                    const cleanPhone = customerPhone ? customerPhone.value.replace(/\D/g, '') : '';
+                    phoneError.textContent = cleanPhone.length < 9 || cleanPhone.length > 11 ? 'กรุณากรอกเบอร์โทรศัพท์ที่ถูกต้อง' : '';
+                    phoneError.style.display = cleanPhone.length < 9 || cleanPhone.length > 11 ? 'block' : 'none';
+                }
+
+                if (addressError) {
+                    addressError.textContent = deliveryAddress && !deliveryAddress.value.trim() ? 'กรุณากรอกที่อยู่จัดส่ง' : '';
+                    addressError.style.display = deliveryAddress && !deliveryAddress.value.trim() ? 'block' : 'none';
+                }
+            }
+        };
+
+        // Add input event listeners
         if (customerName) {
-            customerName.addEventListener('input', () => {
-                this.validateField(customerName, 'กรุณากรอกชื่อ-นามสกุล');
-            });
+            customerName.addEventListener('input', validateForm);
         }
 
         if (customerPhone) {
-            customerPhone.addEventListener('input', () => {
-                this.validatePhoneField(customerPhone);
-            });
+            customerPhone.addEventListener('input', validateForm);
         }
 
         if (deliveryAddress) {
-            deliveryAddress.addEventListener('input', () => {
-                this.validateField(deliveryAddress, 'กรุณากรอกที่อยู่จัดส่ง');
-            });
+            deliveryAddress.addEventListener('input', validateForm);
         }
+
+        // Initial validation
+        validateForm();
     }
 
     switchTab(tabName) {
@@ -344,44 +633,116 @@ class OrderingApp {
     }
 
     renderProducts() {
-        const productsGrid = document.getElementById('productsGrid');
-        const filteredProducts = this.getFilteredProducts();
+        try {
+            const productsGrid = document.getElementById('productsGrid');
+            if (!productsGrid) return;
 
-        if (filteredProducts.length === 0) {
-            productsGrid.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-search"></i>
-                    <h3>ไม่พบสินค้า</h3>
-                    <p>ลองค้นหาด้วยคำอื่น หรือเลือกหมวดหมู่ที่แตกต่าง</p>
-                </div>
-            `;
-            return;
+            // ใช้ requestAnimationFrame เพื่อการเรนเดอร์ที่ราบรื่นขึ้น
+            window.requestAnimationFrame(() => {
+                const filteredProducts = this.getFilteredProducts();
+
+                if (filteredProducts.length === 0) {
+                    productsGrid.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-search"></i>
+                            <h3>ไม่พบสินค้า</h3>
+                            <p>ลองค้นหาด้วยคำอื่น หรือเลือกหมวดหมู่ที่แตกต่าง</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // ใช้ DocumentFragment เพื่อลดการ reflow
+                const fragment = document.createDocumentFragment();
+                const batchSize = 20; // จำนวนสินค้าต่อแบทช์
+
+                // เรนเดอร์สินค้าแบบแบทช์
+                this.renderProductBatch(filteredProducts, fragment, 0, batchSize, productsGrid);
+            });
+        } catch (error) {
+            console.error('Error rendering products:', error);
+            this.showToast('เกิดข้อผิดพลาดในการแสดงสินค้า', 'error');
         }
+    }
 
-        productsGrid.innerHTML = filteredProducts.map(product => `
-            <div class="product-card" onclick="app.openProductModal(${product.id})">
-                <div class="product-icon">
-                    <i class="${product.icon}"></i>
+    renderProductBatch(products, fragment, startIndex, batchSize, productsGrid) {
+        try {
+            // ถ้าเป็นแบทช์แรก ให้ล้างเนื้อหาเดิมก่อน
+            if (startIndex === 0) {
+                productsGrid.innerHTML = '';
+            }
+
+            const endIndex = Math.min(startIndex + batchSize, products.length);
+            const batch = products.slice(startIndex, endIndex);
+            
+            // สร้าง HTML สำหรับแบทช์นี้
+            const batchHTML = batch.map(product => `
+                <div class="product-card" onclick="app.openProductModal(${product.id})">
+                    <div class="product-icon">
+                        <i class="${product.icon}"></i>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-name">${product.name}</h3>
+                        <p class="product-description">${product.description}</p>
+                        <div class="product-price">฿${product.price}</div>
+                        <button class="add-to-cart" onclick="event.stopPropagation(); app.addToCart(${product.id})">
+                            <i class="fas fa-plus"></i> เพิ่มในตะกร้า
+                        </button>
+                    </div>
                 </div>
-                <div class="product-info">
-                    <h3 class="product-name">${product.name}</h3>
-                    <p class="product-description">${product.description}</p>
-                    <div class="product-price">฿${product.price}</div>
-                    <button class="add-to-cart" onclick="event.stopPropagation(); app.addToCart(${product.id})">
-                        <i class="fas fa-plus"></i> เพิ่มในตะกร้า
-                    </button>
-                </div>
-            </div>
-        `).join('');
+            `).join('');
+            
+            // เพิ่ม HTML ลงใน DOM
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = batchHTML;
+            while (tempDiv.firstChild) {
+                fragment.appendChild(tempDiv.firstChild);
+            }
+            
+            productsGrid.appendChild(fragment);
+            
+            // ถ้ายังมีสินค้าเหลือ ให้เรนเดอร์แบทช์ถัดไป
+            if (endIndex < products.length) {
+                setTimeout(() => {
+                    this.renderProductBatch(products, document.createDocumentFragment(), endIndex, batchSize, productsGrid);
+                }, 10); // รอเวลาเล็กน้อยเพื่อไม่ให้ UI กระตุก
+            }
+        } catch (error) {
+            console.error('Error rendering product batch:', error);
+        }
     }
 
     getFilteredProducts() {
-        return this.products.filter(product => {
-            const matchesCategory = this.currentCategory === 'all' || product.category === this.currentCategory;
-            const matchesSearch = product.name.toLowerCase().includes(this.searchQuery) ||
-                                product.description.toLowerCase().includes(this.searchQuery);
-            return matchesCategory && matchesSearch;
-        });
+        try {
+            // ใช้การแคชข้อมูลเพื่อเพิ่มประสิทธิภาพ
+            const cacheKey = `${this.currentCategory}_${this.searchQuery}`;
+            
+            if (!this._filteredProductsCache) {
+                this._filteredProductsCache = {};
+            }
+            
+            // ล้างแคชเมื่อมีการเปลี่ยนแปลงข้อมูลสินค้า
+            if (this._lastProductsUpdate && this._lastProductsUpdate !== this._productsLastUpdated) {
+                this._filteredProductsCache = {};
+                this._lastProductsUpdate = this._productsLastUpdated;
+            }
+            
+            // ใช้ข้อมูลจากแคชถ้ามี
+            if (!this._filteredProductsCache[cacheKey]) {
+                const searchLower = this.searchQuery.toLowerCase();
+                this._filteredProductsCache[cacheKey] = this.products.filter(product => {
+                    const matchesCategory = this.currentCategory === 'all' || product.category === this.currentCategory;
+                    const matchesSearch = product.name.toLowerCase().includes(searchLower) ||
+                                        product.description.toLowerCase().includes(searchLower);
+                    return matchesCategory && matchesSearch;
+                });
+            }
+            
+            return this._filteredProductsCache[cacheKey];
+        } catch (error) {
+            console.error('Error filtering products:', error);
+            return [];
+        }
     }
 
     openProductModal(productId) {
@@ -428,23 +789,44 @@ class OrderingApp {
     }
 
     addToCart(productId, quantity = 1) {
-        const product = this.products.find(p => p.id === productId);
-        if (!product) return;
+        try {
+            if (!productId) {
+                console.error('Invalid product ID:', productId);
+                this.showToast('ไม่สามารถเพิ่มสินค้าได้ ข้อมูลสินค้าไม่ถูกต้อง', 'error');
+                return;
+            }
+            
+            const product = this.products.find(p => p.id === productId);
+            if (!product) {
+                console.error('Product not found:', productId);
+                this.showToast('ไม่พบสินค้าที่ต้องการ', 'error');
+                return;
+            }
+            
+            if (!quantity || quantity <= 0) {
+                console.error('Invalid quantity:', quantity);
+                this.showToast('กรุณาระบุจำนวนสินค้าให้ถูกต้อง', 'error');
+                return;
+            }
 
-        const existingItem = this.cart.find(item => item.id === productId);
-        
-        if (existingItem) {
-            existingItem.quantity += quantity;
-        } else {
-            this.cart.push({
-                ...product,
-                quantity: quantity
-            });
+            const existingItem = this.cart.find(item => item.id === productId);
+            
+            if (existingItem) {
+                existingItem.quantity += quantity;
+            } else {
+                this.cart.push({
+                    ...product,
+                    quantity: quantity
+                });
+            }
+
+            this.saveCart();
+            this.updateCartUI();
+            this.showToast(`เพิ่ม ${product.name} ลงตะกร้าแล้ว`);
+        } catch (error) {
+            console.error('Error adding product to cart:', error);
+            this.showToast('เกิดข้อผิดพลาดในการเพิ่มสินค้าลงตะกร้า', 'error');
         }
-
-        this.saveCart();
-        this.updateCartUI();
-        this.showToast(`เพิ่ม ${product.name} ลงตะกร้าแล้ว`);
     }
 
     removeFromCart(productId) {
@@ -571,13 +953,18 @@ class OrderingApp {
     validateDeliveryForm() {
         const form = document.getElementById('deliveryForm');
         const requiredFields = ['customerName', 'customerPhone', 'deliveryAddress'];
+        let isValid = true;
         
         for (let field of requiredFields) {
             const input = document.getElementById(field);
             if (!input.value.trim()) {
                 this.showToast(`กรุณากรอก${input.previousElementSibling.textContent}`, 'error');
                 input.focus();
-                return false;
+                input.classList.add('error');
+                isValid = false;
+            } else {
+                input.classList.remove('error');
+                input.classList.add('valid');
             }
         }
         
@@ -587,10 +974,16 @@ class OrderingApp {
         if (cleanPhone.length < 9 || cleanPhone.length > 11) {
             this.showToast('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (9-11 หลัก)', 'error');
             document.getElementById('customerPhone').focus();
-            return false;
+            document.getElementById('customerPhone').classList.add('error');
+            isValid = false;
         }
         
-        return true;
+        // Enable/disable next button based on form validity
+        const nextBtn = document.getElementById('nextBtn');
+        nextBtn.disabled = !isValid;
+        nextBtn.style.opacity = isValid ? '1' : '0.5';
+        
+        return isValid;
     }
 
     saveDeliveryInfo() {
@@ -722,67 +1115,57 @@ class OrderingApp {
             paymentMethod: this.paymentMethod
         };
 
-        // ส่ง Flex Message ก่อนยืนยันคำสั่งซื้อ
-        await this.sendOrderFlexMessage(order);
-        
-        this.orders.unshift(order);
-        this.cart = [];
-        this.saveCart();
-        this.saveOrders();
-        this.updateCartUI();
-        this.renderOrders();
-        this.closeCheckoutModal();
-        this.switchTab('orders');
-        
-        this.showToast('ส่งรายการสั่งซื้อไปในแชทแล้ว! หมายเลขคำสั่งซื้อ: ' + order.id);
+        try {
+            // ส่ง Flex Message ก่อนยืนยันคำสั่งซื้อ (ในโหมดทดสอบจะข้ามขั้นตอนนี้)
+            await this.sendOrderFlexMessage(order);
+            
+            this.orders.unshift(order);
+            this.cart = [];
+            this.saveCart();
+            this.saveOrders();
+            this.updateCartUI();
+            this.renderOrders();
+            this.closeCheckoutModal();
+            this.switchTab('orders');
+            
+            this.showToast('บันทึกคำสั่งซื้อเรียบร้อย! หมายเลขคำสั่งซื้อ: ' + order.id, 'success');
+        } catch (error) {
+            console.error('Error confirming order:', error);
+            this.showToast('เกิดข้อผิดพลาดในการยืนยันคำสั่งซื้อ กรุณาลองใหม่อีกครั้ง', 'error');
+        }
     }
 
     async sendOrderFlexMessage(order) {
         try {
-            this.showToast('กำลังส่งคำสั่งซื้อ...', 'info');
+            this.showToast('กำลังส่งข้อมูลคำสั่งซื้อ...', 'info');
 
-            // สร้าง Flex Message
+            // สร้าง Flex Message สำหรับคำสั่งซื้อ
             const flexMessage = this.createOrderFlexMessage(order);
-
-            // ส่ง Flex Message กลับไปในแชท
-            if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+            
+            // ตรวจสอบว่ามี LIFF SDK หรือไม่
+            if (window.liff && liff.isLoggedIn()) {
+                // ส่ง Flex Message ผ่าน LIFF SDK
                 await liff.sendMessages([flexMessage]);
-
-                // ส่งข้อความเพิ่มเติมสำหรับเจ้าของร้าน
-                const ownerMessage = {
-                    type: 'text',
-                    text: `📋 คำสั่งซื้อใหม่ #${order.id}\n\n💡 เจ้าของร้าน: ตอบกลับ "ยืนยัน" หรือ "ยกเลิก" เพื่อยืนยันคำสั่งซื้อ\n\n📱 หรือเปิดแอปเพื่อดูรายละเอียดเพิ่มเติม`
-                };
-
-                await liff.sendMessages([ownerMessage]);
-
-                this.showToast('ส่งคำสั่งซื้อสำเร็จ! 🎉', 'success');
+                this.showToast('ส่งข้อมูลคำสั่งซื้อเข้าช่องแชทเรียบร้อย', 'success');
             } else {
-                // ถ้าไม่ใช่ LIFF ให้แสดงข้อมูลคำสั่งซื้อ
+                // ในโหมดทดสอบ ให้แสดงข้อมูลคำสั่งซื้อแทนการส่ง Flex Message
+                console.log('Flex Message ที่จะส่ง:', flexMessage);
                 this.showOrderDetails(order);
-                this.showToast('แสดงรายละเอียดคำสั่งซื้อ', 'info');
+                this.showToast('โหมดทดสอบ: แสดงข้อมูลคำสั่งซื้อในคอนโซล', 'info');
             }
+            
+            return true; // ส่งคืนค่าเพื่อให้ confirmOrder ทำงานต่อได้
         } catch (error) {
-            console.error('Error sending flex message:', error);
-
-            // แสดงข้อความ error ที่เป็นมิตรกับผู้ใช้
-            let errorMessage = 'ไม่สามารถส่งข้อความได้';
-
-            if (error.message.includes('permission')) {
-                errorMessage = 'ไม่มีสิทธิ์ส่งข้อความ กรุณาอนุญาตสิทธิ์';
-            } else if (error.message.includes('network')) {
-                errorMessage = 'ปัญหาการเชื่อมต่อ กรุณาตรวจสอบอินเทอร์เน็ต';
-            } else if (error.message.includes('quota')) {
-                errorMessage = 'ส่งข้อความได้ไม่เกินจำนวนที่กำหนด';
-            }
-
-            this.showToast(`${errorMessage} กรุณาลองใหม่`, 'error');
-
-            // แสดงรายละเอียดคำสั่งซื้อเป็น fallback
-            setTimeout(() => {
-                this.showOrderDetails(order);
-            }, 2000);
+            console.error('Error sending order message:', error);
+            this.showToast('เกิดข้อผิดพลาดในการส่งข้อมูลคำสั่งซื้อ', 'error');
+            throw error; // ส่งต่อข้อผิดพลาดเพื่อให้ confirmOrder จัดการต่อ
         }
+    }
+
+    showOrderDetails(order) {
+        // แสดงรายละเอียดคำสั่งซื้อในโหมดทดสอบ
+        console.log('Order details:', order);
+        this.showToast('บันทึกคำสั่งซื้อเรียบร้อย', 'success');
     }
 
     createOrderFlexMessage(order) {
@@ -1334,19 +1717,55 @@ ${itemsText}
     }
 
     renderOrders() {
-        const ordersList = document.getElementById('ordersList');
+        try {
+            const ordersList = document.getElementById('ordersList');
+            if (!ordersList) return;
 
-        if (this.orders.length === 0) {
-            ordersList.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-list-alt"></i>
-                    <h3>ยังไม่มีคำสั่งซื้อ</h3>
-                    <p>เริ่มสั่งซื้อสินค้าเพื่อดูประวัติการสั่งซื้อ</p>
-                </div>
-            `;
-        } else {
-            ordersList.innerHTML = this.orders.map(order => `
-                <div class="order-item">
+            // ใช้ requestAnimationFrame เพื่อการเรนเดอร์ที่ราบรื่นขึ้น
+            window.requestAnimationFrame(() => {
+                if (this.orders.length === 0) {
+                    ordersList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-list-alt"></i>
+                            <h3>ยังไม่มีคำสั่งซื้อ</h3>
+                            <p>เริ่มสั่งซื้อสินค้าเพื่อดูประวัติการสั่งซื้อ</p>
+                        </div>
+                    `;
+                } else {
+                    // ใช้ DocumentFragment เพื่อลดการ reflow
+                    const fragment = document.createDocumentFragment();
+                    const batchSize = 10; // จำนวนออเดอร์ต่อแบทช์
+
+                    // เรียงลำดับออเดอร์จากใหม่ไปเก่า
+                    const sortedOrders = [...this.orders].sort((a, b) => {
+                        return new Date(b.date) - new Date(a.date);
+                    });
+
+                    // เรนเดอร์ออเดอร์แบบแบทช์
+                    this.renderOrderBatch(sortedOrders, fragment, 0, batchSize, ordersList);
+                }
+            });
+        } catch (error) {
+            console.error('Error rendering orders:', error);
+            this.showToast('เกิดข้อผิดพลาดในการแสดงคำสั่งซื้อ', 'error');
+        }
+    }
+
+    renderOrderBatch(orders, fragment, startIndex, batchSize, ordersList) {
+        try {
+            // ถ้าเป็นแบทช์แรก ให้ล้างเนื้อหาเดิมก่อน
+            if (startIndex === 0) {
+                ordersList.innerHTML = '';
+            }
+
+            const endIndex = Math.min(startIndex + batchSize, orders.length);
+            const batch = orders.slice(startIndex, endIndex);
+            
+            // สร้าง HTML สำหรับแบทช์นี้
+            batch.forEach(order => {
+                const orderDiv = document.createElement('div');
+                orderDiv.className = 'order-item';
+                orderDiv.innerHTML = `
                     <div class="order-header">
                         <span class="order-id">#${order.id}</span>
                         <span class="order-date">${order.date}</span>
@@ -1389,8 +1808,21 @@ ${itemsText}
                             </button>
                         ` : ''}
                     </div>
-                </div>
-            `).join('');
+                `;
+                
+                fragment.appendChild(orderDiv);
+            });
+            
+            ordersList.appendChild(fragment);
+            
+            // ถ้ายังมีออเดอร์เหลือ ให้เรนเดอร์แบทช์ถัดไป
+            if (endIndex < orders.length) {
+                setTimeout(() => {
+                    this.renderOrderBatch(orders, document.createDocumentFragment(), endIndex, batchSize, ordersList);
+                }, 10); // รอเวลาเล็กน้อยเพื่อไม่ให้ UI กระตุก
+            }
+        } catch (error) {
+            console.error('Error rendering order batch:', error);
         }
     }
 
@@ -1429,11 +1861,21 @@ ${itemsText}
     }
 
     saveCart() {
-        localStorage.setItem('liff_cart', JSON.stringify(this.cart));
+        try {
+            localStorage.setItem('liff_cart', JSON.stringify(this.cart));
+        } catch (error) {
+            console.error('Error saving cart to localStorage:', error);
+            this.showToast('ไม่สามารถบันทึกข้อมูลตะกร้าสินค้าได้', 'warning');
+        }
     }
 
     saveOrders() {
-        localStorage.setItem('liff_orders', JSON.stringify(this.orders));
+        try {
+            localStorage.setItem('liff_orders', JSON.stringify(this.orders));
+        } catch (error) {
+            console.error('Error saving orders to localStorage:', error);
+            this.showToast('ไม่สามารถบันทึกข้อมูลคำสั่งซื้อได้', 'warning');
+        }
     }
 
     showLoading(show) {
