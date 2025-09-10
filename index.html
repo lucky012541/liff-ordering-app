@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สั่งซื้อสินค้า - LIFF Ordering App</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script>
+        // Initialize LIFF with your ID
+        liff.init({ liffId: '2006986568-yjrOkKqm' });
+    </script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1><i class="fas fa-shopping-cart"></i> สั่งซื้อสินค้า</h1>
+            <div class="user-info" id="userInfo">
+                <span id="userName">กำลังโหลด...</span>
+                <div class="cart-icon" id="cartIcon">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-count" id="cartCount">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="container">
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-tab="products">
+                    <i class="fas fa-store"></i> สินค้า
+                </button>
+                <button class="nav-tab" data-tab="cart">
+                    <i class="fas fa-shopping-bag"></i> ตะกร้า
+                </button>
+                <button class="nav-tab" data-tab="orders">
+                    <i class="fas fa-list-alt"></i> คำสั่งซื้อ
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Products Tab -->
+            <div class="tab-content active" id="products">
+                <div class="search-bar">
+                    <input type="text" id="searchInput" placeholder="ค้นหาสินค้า...">
+                    <i class="fas fa-search"></i>
+                </div>
+                
+                <div class="category-filter">
+                    <button class="category-btn active" data-category="all">ทั้งหมด</button>
+                    <button class="category-btn" data-category="food">อาหาร</button>
+                    <button class="category-btn" data-category="drink">เครื่องดื่ม</button>
+                    <button class="category-btn" data-category="dessert">ของหวาน</button>
+                </div>
+
+                <div class="products-grid" id="productsGrid">
+                    <!-- Products will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Cart Tab -->
+            <div class="tab-content" id="cart">
+                <div class="cart-container">
+                    <div class="cart-items" id="cartItems">
+                        <!-- Cart items will be loaded here -->
+                    </div>
+                    <div class="cart-summary">
+                        <div class="summary-row">
+                            <span>ยอดรวม:</span>
+                            <span id="cartTotal">฿0</span>
+                        </div>
+                        <button class="checkout-btn" id="checkoutBtn" disabled>
+                            <i class="fas fa-credit-card"></i> สั่งซื้อ
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders Tab -->
+            <div class="tab-content" id="orders">
+                <div class="orders-container">
+                    <div class="orders-list" id="ordersList">
+                        <!-- Orders will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Product Modal -->
+    <div class="modal" id="productModal">
+        <div class="modal-content">
+            <span class="close" id="closeModal">&times;</span>
+            <div class="modal-body">
+                <img id="modalProductImage" src="" alt="">
+                <div class="modal-info">
+                    <h3 id="modalProductName"></h3>
+                    <p id="modalProductDescription"></p>
+                    <div class="price-quantity">
+                        <span class="price" id="modalProductPrice"></span>
+                        <div class="quantity-controls">
+                            <button class="qty-btn" id="decreaseQty">-</button>
+                            <span id="modalQuantity">1</span>
+                            <button class="qty-btn" id="increaseQty">+</button>
+                        </div>
+                    </div>
+                    <button class="add-to-cart-btn" id="addToCartBtn">
+                        <i class="fas fa-plus"></i> เพิ่มในตะกร้า
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>กำลังโหลด...</p>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast" id="toast">
+        <div class="toast-content">
+            <i class="fas fa-check-circle"></i>
+            <span id="toastMessage"></span>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
