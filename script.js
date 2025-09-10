@@ -576,6 +576,31 @@ ${itemsText}
                             <span>฿${order.total}</span>
                         </div>
                     </div>
+                    <div class="order-actions">
+                        ${order.status === 'pending' ? `
+                            <button class="confirm-btn" onclick="app.confirmOrder(${order.id})">
+                                <i class="fas fa-check"></i> ยืนยัน
+                            </button>
+                            <button class="cancel-btn" onclick="app.updateOrderStatus(${order.id}, 'cancelled')">
+                                <i class="fas fa-times"></i> ยกเลิก
+                            </button>
+                        ` : ''}
+                        ${order.status === 'confirmed' ? `
+                            <button class="preparing-btn" onclick="app.updateOrderStatus(${order.id}, 'preparing')">
+                                <i class="fas fa-clock"></i> กำลังเตรียม
+                            </button>
+                        ` : ''}
+                        ${order.status === 'preparing' ? `
+                            <button class="ready-btn" onclick="app.updateOrderStatus(${order.id}, 'ready')">
+                                <i class="fas fa-check-circle"></i> พร้อมรับ
+                            </button>
+                        ` : ''}
+                        ${order.status === 'ready' ? `
+                            <button class="complete-btn" onclick="app.updateOrderStatus(${order.id}, 'completed')">
+                                <i class="fas fa-check-double"></i> เสร็จสิ้น
+                            </button>
+                        ` : ''}
+                    </div>
                 </div>
             `).join('');
         }
@@ -584,10 +609,35 @@ ${itemsText}
     getStatusText(status) {
         const statusMap = {
             'pending': 'รอดำเนินการ',
+            'confirmed': 'ยืนยันแล้ว',
+            'preparing': 'กำลังเตรียม',
+            'ready': 'พร้อมรับ',
             'completed': 'เสร็จสิ้น',
             'cancelled': 'ยกเลิก'
         };
         return statusMap[status] || status;
+    }
+
+    // ฟังก์ชันสำหรับเจ้าของร้านยืนยันคำสั่งซื้อ
+    confirmOrder(orderId) {
+        const order = this.orders.find(o => o.id === orderId);
+        if (order) {
+            order.status = 'confirmed';
+            this.saveOrders();
+            this.renderOrders();
+            this.showToast(`ยืนยันคำสั่งซื้อ #${orderId} แล้ว`);
+        }
+    }
+
+    // ฟังก์ชันสำหรับเจ้าของร้านอัปเดตสถานะ
+    updateOrderStatus(orderId, newStatus) {
+        const order = this.orders.find(o => o.id === orderId);
+        if (order) {
+            order.status = newStatus;
+            this.saveOrders();
+            this.renderOrders();
+            this.showToast(`อัปเดตสถานะคำสั่งซื้อ #${orderId} เป็น ${this.getStatusText(newStatus)}`);
+        }
     }
 
     saveCart() {
