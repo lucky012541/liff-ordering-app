@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - LIFF Ordering App</title>
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Initialize LIFF with your ID
+        liff.init({ liffId: '2006986568-yjrOkKqm' });
+    </script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="admin-header">
+        <div class="container">
+            <div class="header-left">
+                <h1><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h1>
+                <a href="index.html" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> กลับหน้าหลัก
+                </a>
+            </div>
+            <div class="header-right">
+                <div class="user-info" id="userInfo">
+                    <span id="userName">กำลังโหลด...</span>
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="admin-nav">
+        <div class="container">
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-tab="orders">
+                    <i class="fas fa-shopping-cart"></i> คำสั่งซื้อ
+                </button>
+                <button class="nav-tab" data-tab="products">
+                    <i class="fas fa-box"></i> จัดการสินค้า
+                </button>
+                <button class="nav-tab" data-tab="statistics">
+                    <i class="fas fa-chart-bar"></i> สถิติ
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        <div class="container">
+            <!-- Orders Tab -->
+            <div class="tab-content active" id="orders">
+                <div class="dashboard-header">
+                    <h2><i class="fas fa-shopping-cart"></i> จัดการคำสั่งซื้อ</h2>
+                    <div class="order-filters">
+                        <select id="statusFilter">
+                            <option value="all">ทั้งหมด</option>
+                            <option value="pending">รอดำเนินการ</option>
+                            <option value="confirmed">ยืนยันแล้ว</option>
+                            <option value="preparing">กำลังเตรียม</option>
+                            <option value="ready">พร้อมรับ</option>
+                            <option value="completed">เสร็จสิ้น</option>
+                            <option value="cancelled">ยกเลิก</option>
+                        </select>
+                        <input type="date" id="dateFilter" placeholder="กรองตามวันที่">
+                        <button class="refresh-btn" id="refreshOrders">
+                            <i class="fas fa-sync-alt"></i> รีเฟรช
+                        </button>
+                    </div>
+                </div>
+                <div class="orders-management" id="ordersManagement">
+                    <!-- Orders will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Products Tab -->
+            <div class="tab-content" id="products">
+                <div class="dashboard-header">
+                    <h2><i class="fas fa-box"></i> จัดการสินค้า</h2>
+                    <button class="add-product-btn" id="addProductBtn">
+                        <i class="fas fa-plus"></i> เพิ่มสินค้าใหม่
+                    </button>
+                </div>
+                <div class="products-management" id="productsManagement">
+                    <!-- Products management will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Statistics Tab -->
+            <div class="tab-content" id="statistics">
+                <div class="dashboard-header">
+                    <h2><i class="fas fa-chart-bar"></i> สถิติการขาย</h2>
+                </div>
+                <div class="statistics-content">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4 id="totalOrders">0</h4>
+                                <p>คำสั่งซื้อทั้งหมด</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4 id="totalRevenue">฿0</h4>
+                                <p>รายได้รวม</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4 id="pendingOrders">0</h4>
+                                <p>รอดำเนินการ</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4 id="completedOrders">0</h4>
+                                <p>เสร็จสิ้น</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <h4>ยอดขายรายวัน (7 วันล่าสุด)</h4>
+                        <canvas id="salesChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Admin Product Modal -->
+    <div class="modal" id="adminProductModal">
+        <div class="modal-content admin-modal">
+            <span class="close" id="closeAdminModal">&times;</span>
+            <div class="modal-body">
+                <h3 id="adminModalTitle">เพิ่มสินค้าใหม่</h3>
+                <form id="adminProductForm" class="admin-form">
+                    <div class="form-group">
+                        <label for="productName">ชื่อสินค้า</label>
+                        <input type="text" id="productName" name="name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="productDescription">คำอธิบาย</label>
+                        <textarea id="productDescription" name="description" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="productPrice">ราคา (บาท)</label>
+                            <input type="number" id="productPrice" name="price" min="0" step="1" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="productStock">จำนวนสต็อก</label>
+                            <input type="number" id="productStock" name="stock" min="0" step="1" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="productCategory">หมวดหมู่</label>
+                        <select id="productCategory" name="category" required>
+                            <option value="ice">น้ำแข็ง</option>
+                            <option value="water">น้ำดื่ม</option>
+                            <option value="gas">แก๊สหุงต้ม</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="productImage">รูปภาพสินค้า</label>
+                        <input type="file" id="productImage" name="image" accept="image/*">
+                        <div class="image-preview" id="imagePreview">
+                            <img id="previewImg" src="" alt="Preview" style="display: none;">
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="cancel-btn" id="cancelProductBtn">ยกเลิก</button>
+                        <button type="submit" class="save-btn" id="saveProductBtn">
+                            <i class="fas fa-save"></i> บันทึก
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>กำลังโหลด...</p>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast" id="toast">
+        <div class="toast-content">
+            <i class="fas fa-check-circle"></i>
+            <span id="toastMessage"></span>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
