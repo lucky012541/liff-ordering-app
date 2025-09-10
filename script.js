@@ -18,23 +18,28 @@ class OrderingApp {
 
     async init() {
         this.showLoading(true);
-        
+
         try {
+            // Wait for LIFF initialization to complete
+            if (window.liffInitPromise) {
+                await window.liffInitPromise;
+            }
+
             // Initialize LIFF
             await this.initializeLIFF();
-            
+
             // Load sample data
             this.loadSampleData();
-            
+
             // Setup event listeners
             this.setupEventListeners();
-            
+
             // Render initial content
             this.renderProducts();
             this.updateCartUI();
             this.renderOrders();
             this.renderAdminProducts();
-            
+
             this.showLoading(false);
         } catch (error) {
             console.error('Error initializing app:', error);
@@ -1432,38 +1437,72 @@ ${itemsText}
     }
 
     showLoading(show) {
-        const loading = document.getElementById('loading');
-        if (show) {
-            loading.classList.add('show');
-        } else {
-            loading.classList.remove('show');
+        try {
+            const loading = document.getElementById('loading');
+            if (loading) {
+                if (show) {
+                    loading.classList.add('show');
+                } else {
+                    loading.classList.remove('show');
+                }
+            }
+        } catch (error) {
+            console.warn('Loading element not available:', error);
         }
     }
 
     showToast(message, type = 'success') {
-        const toast = document.getElementById('toast');
-        const toastMessage = document.getElementById('toastMessage');
-        
-        toastMessage.textContent = message;
-        toast.className = `toast ${type}`;
-        toast.classList.add('show');
+        try {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
 
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 3000);
+            if (toast && toastMessage) {
+                toastMessage.textContent = message;
+                toast.className = `toast ${type}`;
+                toast.classList.add('show');
+
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            } else {
+                console.log('Toast notification:', message);
+            }
+        } catch (error) {
+            console.warn('Toast notification failed:', error);
+            console.log('Toast message:', message);
+        }
     }
 }
 
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    window.app = new OrderingApp();
+    try {
+        console.log('DOM loaded, initializing app...');
+        window.app = new OrderingApp();
+        console.log('App initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize app:', error);
+        // Fallback: try to show error message
+        try {
+            const loading = document.getElementById('loading');
+            if (loading) {
+                loading.innerHTML = '<p>เกิดข้อผิดพลาดในการโหลดแอป กรุณารีเฟรชหน้า</p>';
+            }
+        } catch (fallbackError) {
+            console.error('Fallback error handling failed:', fallbackError);
+        }
+    }
 });
 
-// Handle LIFF errors
-if (typeof liff !== 'undefined') {
-    liff.init({ liffId: '2006986568-yjrOkKqm' }, () => {
-        // LIFF initialized successfully
-    }, (err) => {
-        console.error('LIFF initialization failed', err);
-    });
-}
+// Handle LIFF errors (backup initialization)
+window.addEventListener('load', () => {
+    if (typeof liff !== 'undefined' && !window.liffInitialized) {
+        liff.init({ liffId: '2006986568-yjrOkKqm' }, () => {
+            console.log('Backup LIFF initialization successful');
+            window.liffInitialized = true;
+        }, (err) => {
+            console.error('Backup LIFF initialization failed:', err);
+            window.liffInitialized = false;
+        });
+    }
+});

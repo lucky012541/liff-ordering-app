@@ -8,8 +8,39 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
-        // Initialize LIFF with your ID
-        liff.init({ liffId: '2006986568-yjrOkKqm' });
+        // Initialize LIFF with error handling
+        window.liffInitPromise = new Promise((resolve, reject) => {
+            if (typeof liff === 'undefined') {
+                // LIFF SDK not loaded, wait for it
+                window.addEventListener('load', () => {
+                    if (typeof liff !== 'undefined') {
+                        liff.init({ liffId: '2006986568-yjrOkKqm' })
+                            .then(() => {
+                                console.log('LIFF initialized successfully');
+                                resolve();
+                            })
+                            .catch((error) => {
+                                console.error('LIFF initialization failed:', error);
+                                resolve(); // Resolve anyway to prevent blocking
+                            });
+                    } else {
+                        console.warn('LIFF SDK not available, running in mock mode');
+                        resolve();
+                    }
+                });
+            } else {
+                // LIFF SDK already loaded
+                liff.init({ liffId: '2006986568-yjrOkKqm' })
+                    .then(() => {
+                        console.log('LIFF initialized successfully');
+                        resolve();
+                    })
+                    .catch((error) => {
+                        console.error('LIFF initialization failed:', error);
+                        resolve(); // Resolve anyway to prevent blocking
+                    });
+            }
+        });
     </script>
 </head>
 <body>
