@@ -433,13 +433,13 @@ class OrderingApp {
                             text: '🧊 ร้านขายน้ำแข็ง',
                             weight: 'bold',
                             size: 'xl',
-                            color: '#FF8C00'
+                            color: '#FFFFFF'
                         },
                         {
                             type: 'text',
                             text: `คำสั่งซื้อ #${order.id}`,
                             size: 'sm',
-                            color: '#666666',
+                            color: '#FFFFFF',
                             margin: 'md'
                         }
                     ]
@@ -453,13 +453,14 @@ class OrderingApp {
                             text: 'รายการสินค้า',
                             weight: 'bold',
                             size: 'md',
-                            margin: 'md'
+                            margin: 'md',
+                            color: '#FF8C00'
                         },
                         {
                             type: 'text',
                             text: itemsText,
                             size: 'sm',
-                            color: '#666666',
+                            color: '#333333',
                             margin: 'sm',
                             wrap: true
                         },
@@ -471,20 +472,21 @@ class OrderingApp {
                             type: 'box',
                             layout: 'horizontal',
                             contents: [
-                                {
-                                    type: 'text',
-                                    text: 'ยอดรวม',
-                                    size: 'md',
-                                    weight: 'bold'
-                                },
-                                {
-                                    type: 'text',
-                                    text: `฿${order.total}`,
-                                    size: 'md',
-                                    weight: 'bold',
-                                    color: '#FF8C00',
-                                    align: 'end'
-                                }
+                        {
+                            type: 'text',
+                            text: 'ยอดรวม',
+                            size: 'md',
+                            weight: 'bold',
+                            color: '#FF8C00'
+                        },
+                        {
+                            type: 'text',
+                            text: `฿${order.total}`,
+                            size: 'md',
+                            weight: 'bold',
+                            color: '#FF8C00',
+                            align: 'end'
+                        }
                             ],
                             margin: 'md'
                         }
@@ -498,14 +500,14 @@ class OrderingApp {
                             type: 'text',
                             text: `วันที่: ${order.date}`,
                             size: 'xs',
-                            color: '#666666',
+                            color: '#FFFFFF',
                             align: 'center'
                         },
                         {
                             type: 'text',
                             text: 'ขอบคุณสำหรับการสั่งซื้อ! 🎉',
                             size: 'sm',
-                            color: '#FF8C00',
+                            color: '#FFFFFF',
                             align: 'center',
                             margin: 'md'
                         }
@@ -513,10 +515,10 @@ class OrderingApp {
                 },
                 styles: {
                     header: {
-                        backgroundColor: '#FFF5E6'
+                        backgroundColor: '#FF8C00'
                     },
                     footer: {
-                        backgroundColor: '#FFF5E6'
+                        backgroundColor: '#FF8C00'
                     }
                 }
             }
