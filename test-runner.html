@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Bot Runner - ระบบทดสอบอัตโนมัติ</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 12px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .control-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .status-panel {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .results-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .test-log {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .log-success {
+            background: rgba(39, 174, 96, 0.2);
+            border-left: 3px solid #27ae60;
+        }
+
+        .log-error {
+            background: rgba(231, 76, 60, 0.2);
+            border-left: 3px solid #e74c3c;
+        }
+
+        .log-warning {
+            background: rgba(243, 156, 18, 0.2);
+            border-left: 3px solid #f39c12;
+        }
+
+        .report-section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .report-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .issue-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .issue-item.warning {
+            border-left-color: #f39c12;
+        }
+
+        .screenshot-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .screenshot-item {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .screenshot-item img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .screenshot-info {
+            padding: 15px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .iframe-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 30px;
+        }
+
+        .iframe-header {
+            background: #34495e;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+        }
+
+        @media (max-width: 768px) {
+            .test-controls {
+                flex-direction: column;
+            }
+            
+            .btn {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-robot"></i> Test Bot Runner</h1>
+            <p>ระบบทดสอบอัตโนมัติสำหรับแอปพลิเคชันสั่งซื้อสินค้า</p>
+        </div>
+
+        <div class="control-panel">
+            <h3><i class="fas fa-cog"></i> การควบคุมการทดสอบ</h3>
+            
+            <div class="test-controls">
+                <button class="btn btn-primary" onclick="runFullTest()">
+                    <i class="fas fa-play"></i> เริ่มทดสอบทั้งหมด
+                </button>
+                <button class="btn btn-success" onclick="runProductTest()">
+                    <i class="fas fa-shopping-bag"></i> ทดสอบการเลือกสินค้า
+                </button>
+                <button class="btn btn-warning" onclick="runCheckoutTest()">
+                    <i class="fas fa-credit-card"></i> ทดสอบการสั่งซื้อ
+                </button>
+                <button class="btn btn-danger" onclick="clearResults()">
+                    <i class="fas fa-trash"></i> ล้างผลลัพธ์
+                </button>
+            </div>
+
+            <div class="status-panel">
+                <div class="status-item">
+                    <span><strong>สถานะ:</strong></span>
+                    <span id="testStatus">พร้อมทดสอบ</span>
+                </div>
+                <div class="status-item">
+                    <span><strong>ขั้นตอนที่เสร็จสิ้น:</strong></span>
+                    <span id="completedSteps">0</span>
+                </div>
+                <div class="status-item">
+                    <span><strong>ข้อผิดพลาด:</strong></span>
+                    <span id="errorCount">0</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBar"></div>
+                </div>
+            </div>
+
+            <div class="test-log" id="testLog">
+                <div class="log-entry">🤖 Test Bot พร้อมทำงาน...</div>
+            </div>
+        </div>
+
+        <div class="results-panel" id="resultsPanel" style="display: none;">
+            <h3><i class="fas fa-chart-bar"></i> ผลการทดสอบ</h3>
+            <div id="testSummary"></div>
+        </div>
+
+        <div class="report-section" id="issuesSection" style="display: none;">
+            <h3><i class="fas fa-exclamation-triangle"></i> ปัญหาที่พบ</h3>
+            <div id="issuesList"></div>
+        </div>
+
+        <div class="report-section" id="screenshotsSection" style="display: none;">
+            <h3><i class="fas fa-camera"></i> ภาพหน้าจอ</h3>
+            <div class="screenshot-gallery" id="screenshotGallery"></div>
+        </div>
+
+        <div class="iframe-container">
+            <div class="iframe-header">
+                <span><i class="fas fa-desktop"></i> แอปพลิเคชันที่ทดสอบ</span>
+                <button class="btn btn-primary" onclick="reloadApp()">
+                    <i class="fas fa-sync-alt"></i> รีโหลด
+                </button>
+            </div>
+            <iframe id="testFrame" src="index.html"></iframe>
+        </div>
+    </div>
+
+    <script src="test-bot.js"></script>
+    <script>
+        let currentTestBot = null;
+        let testResults = [];
+
+        // Initialize test environment
+        function initTestEnvironment() {
+            const iframe = document.getElementById('testFrame');
+            iframe.onload = function() {
+                // Inject test bot into iframe
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                const script = iframeDoc.createElement('script');
+                script.src = 'test-bot.js';
+                iframeDoc.head.appendChild(script);
+                
+                setTimeout(() => {
+                    currentTestBot = iframe.contentWindow.testBot;
+                    logMessage('✅ Test Bot injected into application', 'success');
+                }, 1000);
+            };
+        }
+
+        // Log messages to test log
+        function logMessage(message, type = 'info') {
+            const log = document.getElementById('testLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Update test status
+        function updateStatus(status, completed = 0, errors = 0, progress = 0) {
+            document.getElementById('testStatus').textContent = status;
+            document.getElementById('completedSteps').textContent = completed;
+            document.getElementById('errorCount').textContent = errors;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+        }
+
+        // Run full test suite
+        async function runFullTest() {
+            if (!currentTestBot) {
+                logMessage('❌ Test Bot not ready. Please wait...', 'error');
+                return;
+            }
+
+            updateStatus('กำลังทดสอบ...', 0, 0, 0);
+            logMessage('🚀 Starting full test suite...', 'info');
+
+            try {
+                const report = await currentTestBot.runFullTest();
+                displayResults(report);
+                logMessage('✅ Test suite completed successfully', 'success');
+            } catch (error) {
+                logMessage(`❌ Test suite failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Run product selection test only
+        async function runProductTest() {
+            if (!currentTestBot) {
+                logMessage('❌ Test Bot not ready', 'error');
+                return;
+            }
+
+            updateStatus('ทดสอบการเลือกสินค้า...', 0, 0, 0);
+            logMessage('🛍️ Testing product selection...', 'info');
+
+            try {
+                await currentTestBot.testProductSelection();
+                logMessage('✅ Product selection test completed', 'success');
+            } catch (error) {
+                logMessage(`❌ Product test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Run checkout test only
+        async function runCheckoutTest() {
+            if (!currentTestBot) {
+                logMessage('❌ Test Bot not ready', 'error');
+                return;
+            }
+
+            updateStatus('ทดสอบการสั่งซื้อ...', 0, 0, 0);
+            logMessage('💳 Testing checkout process...', 'info');
+
+            try {
+                await currentTestBot.testCheckoutProcess();
+                logMessage('✅ Checkout test completed', 'success');
+            } catch (error) {
+                logMessage(`❌ Checkout test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Display test results
+        function displayResults(report) {
+            testResults = report;
+            
+            // Show results panel
+            document.getElementById('resultsPanel').style.display = 'block';
+            
+            // Update summary
+            const summary = document.getElementById('testSummary');
+            summary.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                    <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; text-align: center;">
+                        <h4 style="color: #27ae60;">ขั้นตอนที่สำเร็จ</h4>
+                        <div style="font-size: 2rem; font-weight: bold; color: #27ae60;">${report.testSession.successfulSteps}</div>
+                    </div>
+                    <div style="background: #ffeaea; padding: 15px; border-radius: 8px; text-align: center;">
+                        <h4 style="color: #e74c3c;">ข้อผิดพลาด</h4>
+                        <div style="font-size: 2rem; font-weight: bold; color: #e74c3c;">${report.testSession.errors}</div>
+                    </div>
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; text-align: center;">
+                        <h4 style="color: #f39c12;">คำเตือน</h4>
+                        <div style="font-size: 2rem; font-weight: bold; color: #f39c12;">${report.testSession.warnings}</div>
+                    </div>
+                    <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; text-align: center;">
+                        <h4 style="color: #2196f3;">ขั้นตอนทั้งหมด</h4>
+                        <div style="font-size: 2rem; font-weight: bold; color: #2196f3;">${report.testSession.totalSteps}</div>
+                    </div>
+                </div>
+            `;
+
+            // Display issues
+            displayIssues(report.summary);
+            
+            // Display screenshots
+            displayScreenshots(report.screenshots);
+            
+            // Update status
+            updateStatus('ทดสอบเสร็จสิ้น', report.testSession.successfulSteps, report.testSession.errors, 100);
+        }
+
+        // Display issues found
+        function displayIssues(summary) {
+            const issuesSection = document.getElementById('issuesSection');
+            const issuesList = document.getElementById('issuesList');
+            
+            if (summary.criticalIssues.length === 0 && summary.minorIssues.length === 0) {
+                issuesSection.style.display = 'none';
+                return;
+            }
+            
+            issuesSection.style.display = 'block';
+            
+            let issuesHtml = '';
+            
+            // Critical issues
+            summary.criticalIssues.forEach(issue => {
+                issuesHtml += `
+                    <div class="issue-item">
+                        <h4><i class="fas fa-times-circle"></i> ข้อผิดพลาดร้ายแรง</h4>
+                        <p><strong>ขั้นตอน:</strong> ${issue.step}</p>
+                        <p><strong>ข้อผิดพลาด:</strong> ${issue.error}</p>
+                        <p><strong>เวลา:</strong> ${new Date(issue.timestamp).toLocaleString()}</p>
+                        ${issue.hasScreenshot ? '<p><i class="fas fa-camera"></i> มีภาพหน้าจอ</p>' : ''}
+                    </div>
+                `;
+            });
+            
+            // Minor issues
+            summary.minorIssues.forEach(issue => {
+                issuesHtml += `
+                    <div class="issue-item warning">
+                        <h4><i class="fas fa-exclamation-triangle"></i> คำเตือน</h4>
+                        <p><strong>ขั้นตอน:</strong> ${issue.step}</p>
+                        <p><strong>คำเตือน:</strong> ${issue.warning}</p>
+                        <p><strong>เวลา:</strong> ${new Date(issue.timestamp).toLocaleString()}</p>
+                    </div>
+                `;
+            });
+            
+            // Recommendations
+            if (summary.recommendations.length > 0) {
+                issuesHtml += `
+                    <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                        <h4><i class="fas fa-lightbulb"></i> คำแนะนำ</h4>
+                        <ul>
+                            ${summary.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            issuesList.innerHTML = issuesHtml;
+        }
+
+        // Display screenshots
+        function displayScreenshots(screenshots) {
+            const screenshotsSection = document.getElementById('screenshotsSection');
+            const gallery = document.getElementById('screenshotGallery');
+            
+            if (screenshots.length === 0) {
+                screenshotsSection.style.display = 'none';
+                return;
+            }
+            
+            screenshotsSection.style.display = 'block';
+            
+            gallery.innerHTML = screenshots.map(screenshot => `
+                <div class="screenshot-item">
+                    <img src="${screenshot.dataUrl}" alt="Screenshot">
+                    <div class="screenshot-info">
+                        <h4>${screenshot.description}</h4>
+                        <p><small>${new Date(screenshot.timestamp).toLocaleString()}</small></p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Clear all results
+        function clearResults() {
+            document.getElementById('resultsPanel').style.display = 'none';
+            document.getElementById('issuesSection').style.display = 'none';
+            document.getElementById('screenshotsSection').style.display = 'none';
+            document.getElementById('testLog').innerHTML = '<div class="log-entry">🤖 Test Bot พร้อมทำงาน...</div>';
+            updateStatus('พร้อมทดสอบ', 0, 0, 0);
+            testResults = [];
+        }
+
+        // Reload application
+        function reloadApp() {
+            document.getElementById('testFrame').src = 'index.html';
+            setTimeout(initTestEnvironment, 500);
+        }
+
+        // Initialize when page loads
+        window.onload = function() {
+            initTestEnvironment();
+            logMessage('🚀 Test Runner initialized', 'success');
+            
+            // Auto-start test after initialization
+            setTimeout(() => {
+                logMessage('🤖 Auto-starting test suite...', 'info');
+                runFullTest();
+            }, 3000);
+        };
+    </script>
+</body>
+</html>

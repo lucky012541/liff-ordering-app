@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Test Runner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .btn:hover {
+            background: #2980b9;
+        }
+        .btn.success {
+            background: #27ae60;
+        }
+        .btn.warning {
+            background: #f39c12;
+        }
+        .btn.danger {
+            background: #e74c3c;
+        }
+        .log {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 5px;
+        }
+        .log-success {
+            color: #2ecc71;
+        }
+        .log-error {
+            color: #e74c3c;
+        }
+        .log-warning {
+            color: #f39c12;
+        }
+        .status {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .status-item {
+            text-align: center;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status-success {
+            background: #d5f4e6;
+            color: #27ae60;
+        }
+        .status-error {
+            background: #fadbd8;
+            color: #e74c3c;
+        }
+        .status-info {
+            background: #d6eaf8;
+            color: #3498db;
+        }
+        .iframe-container {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .iframe-header {
+            background: #34495e;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Simple Test Runner</h1>
+            <p>ระบบทดสอบอัตโนมัติแบบง่าย</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="startTest()">▶️ เริ่มทดสอบ</button>
+            <button class="btn success" onclick="testProducts()">🛍️ ทดสอบสินค้า</button>
+            <button class="btn warning" onclick="testCheckout()">💳 ทดสอบสั่งซื้อ</button>
+            <button class="btn danger" onclick="clearLog()">🗑️ ล้างผลลัพธ์</button>
+        </div>
+
+        <div class="status">
+            <div class="status-item status-info">
+                <h3 id="totalTests">0</h3>
+                <p>ทดสอบทั้งหมด</p>
+            </div>
+            <div class="status-item status-success">
+                <h3 id="passedTests">0</h3>
+                <p>ผ่านการทดสอบ</p>
+            </div>
+            <div class="status-item status-error">
+                <h3 id="failedTests">0</h3>
+                <p>ทดสอบล้มเหลว</p>
+            </div>
+        </div>
+
+        <div class="log" id="testLog">
+            <div class="log-entry">🤖 Test Runner พร้อมทำงาน...</div>
+        </div>
+
+        <div class="iframe-container">
+            <div class="iframe-header">
+                <span>📱 แอปพลิเคชันที่ทดสอบ</span>
+                <button class="btn" onclick="reloadApp()">🔄 รีโหลด</button>
+            </div>
+            <iframe id="testFrame" src="index.html"></iframe>
+        </div>
+    </div>
+
+    <script>
+        let testStats = { total: 0, passed: 0, failed: 0 };
+        let isTestRunning = false;
+
+        // Log message to console
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('testLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        // Update statistics
+        function updateStats() {
+            document.getElementById('totalTests').textContent = testStats.total;
+            document.getElementById('passedTests').textContent = testStats.passed;
+            document.getElementById('failedTests').textContent = testStats.failed;
+        }
+
+        // Test helper function
+        function testStep(description, testFunction) {
+            return new Promise((resolve) => {
+                testStats.total++;
+                log(`🔍 ${description}`, 'info');
+                
+                try {
+                    const result = testFunction();
+                    if (result !== false) {
+                        testStats.passed++;
+                        log(`✅ ${description} - ผ่าน`, 'success');
+                        resolve(true);
+                    } else {
+                        testStats.failed++;
+                        log(`❌ ${description} - ล้มเหลว`, 'error');
+                        resolve(false);
+                    }
+                } catch (error) {
+                    testStats.failed++;
+                    log(`❌ ${description} - ข้อผิดพลาด: ${error.message}`, 'error');
+                    resolve(false);
+                }
+                
+                updateStats();
+            });
+        }
+
+        // Delay function
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Get iframe document
+        function getIframeDoc() {
+            const iframe = document.getElementById('testFrame');
+            return iframe.contentDocument || iframe.contentWindow.document;
+        }
+
+        // Check if app is ready
+        function isAppReady() {
+            try {
+                const doc = getIframeDoc();
+                const app = doc.querySelector('#productsGrid') || doc.querySelector('.nav-tab');
+                return app !== null;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        // Wait for app to be ready
+        function waitForApp() {
+            return new Promise((resolve) => {
+                const checkReady = () => {
+                    if (isAppReady()) {
+                        log('✅ แอปพลิเคชันพร้อมทำงาน', 'success');
+                        resolve(true);
+                    } else {
+                        log('⏳ รอแอปพลิเคชันโหลด...', 'warning');
+                        setTimeout(checkReady, 1000);
+                    }
+                };
+                checkReady();
+            });
+        }
+
+        // Test products functionality
+        async function testProducts() {
+            if (isTestRunning) return;
+            isTestRunning = true;
+            
+            log('🛍️ เริ่มทดสอบการเลือกสินค้า...', 'info');
+            
+            // Wait for app to be ready
+            await waitForApp();
+            
+            const doc = getIframeDoc();
+            
+            // Test search functionality
+            await testStep('ทดสอบการค้นหาสินค้า', () => {
+                const searchInput = doc.getElementById('searchInput');
+                if (!searchInput) return false;
+                
+                searchInput.value = 'น้ำ';
+                searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                return true;
+            });
+            
+            await delay(1000);
+            
+            // Test category buttons
+            await testStep('ทดสอบปุ่มหมวดหมู่', () => {
+                const categoryBtns = doc.querySelectorAll('.category-btn');
+                if (categoryBtns.length === 0) return false;
+                
+                categoryBtns[1]?.click(); // Click second category
+                return true;
+            });
+            
+            await delay(1000);
+            
+            // Test product cards
+            await testStep('ทดสอบการคลิกสินค้า', () => {
+                const productCards = doc.querySelectorAll('.product-card');
+                if (productCards.length === 0) return false;
+                
+                productCards[0]?.click(); // Click first product
+                return true;
+            });
+            
+            await delay(1500);
+            
+            // Test modal
+            await testStep('ทดสอบ Modal สินค้า', () => {
+                const modal = doc.getElementById('productModal');
+                const addBtn = doc.getElementById('addToCartBtn');
+                
+                if (!modal || !addBtn) return false;
+                
+                addBtn.click();
+                return true;
+            });
+            
+            log('✅ ทดสอบสินค้าเสร็จสิ้น', 'success');
+            isTestRunning = false;
+        }
+
+        // Test checkout functionality
+        async function testCheckout() {
+            if (isTestRunning) return;
+            isTestRunning = true;
+            
+            log('💳 เริ่มทดสอบการสั่งซื้อ...', 'info');
+            
+            // Wait for app to be ready
+            await waitForApp();
+            
+            const doc = getIframeDoc();
+            
+            // First add some products to cart
+            await testStep('เพิ่มสินค้าลงตะกร้า', () => {
+                // Try to find and click a product first
+                const productCards = doc.querySelectorAll('.product-card');
+                if (productCards.length > 0) {
+                    productCards[0].click();
+                    
+                    // Wait a bit then add to cart
+                    setTimeout(() => {
+                        const addBtn = doc.getElementById('addToCartBtn');
+                        if (addBtn) {
+                            addBtn.click();
+                            // Close modal
+                            const closeBtn = doc.getElementById('closeModal');
+                            if (closeBtn) closeBtn.click();
+                        }
+                    }, 500);
+                    
+                    return true;
+                }
+                return false;
+            });
+            
+            await delay(2000);
+
+            // Test checkout button
+            await testStep('ทดสอบปุ่มสั่งซื้อ', () => {
+                const checkoutBtn = doc.getElementById('checkoutBtnMini') || doc.getElementById('checkoutBtn');
+                if (!checkoutBtn) return false;
+                
+                checkoutBtn.click();
+                return true;
+            });
+            
+            await delay(2000);
+            
+            // Test customer form
+            await testStep('ทดสอบฟอร์มข้อมูลลูกค้า', () => {
+                const nameInput = doc.getElementById('customerName');
+                const phoneInput = doc.getElementById('customerPhone');
+                const addressInput = doc.getElementById('deliveryAddress');
+                
+                if (!nameInput || !phoneInput || !addressInput) return false;
+                
+                nameInput.value = 'ทดสอบ บอท';
+                phoneInput.value = '0812345678';
+                addressInput.value = '123 ถนนทดสอบ';
+                
+                nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+                phoneInput.dispatchEvent(new Event('input', { bubbles: true }));
+                addressInput.dispatchEvent(new Event('input', { bubbles: true }));
+                
+                return true;
+            });
+            
+            await delay(1000);
+            
+            // Test next button
+            await testStep('ทดสอบปุ่มถัดไป', () => {
+                const nextBtns = doc.querySelectorAll('.checkout-btn');
+                const nextBtn = Array.from(nextBtns).find(btn => btn.textContent.includes('ถัดไป'));
+                
+                if (!nextBtn) return false;
+                
+                nextBtn.click();
+                return true;
+            });
+            
+            await delay(1500);
+            
+            // Test payment method
+            await testStep('ทดสอบการเลือกวิธีชำระเงิน', () => {
+                const cashRadio = doc.querySelector('input[name="paymentMethod"][value="cash"]');
+                if (!cashRadio) return false;
+                
+                cashRadio.click();
+                return true;
+            });
+            
+            log('✅ ทดสอบการสั่งซื้อเสร็จสิ้น', 'success');
+            isTestRunning = false;
+        }
+
+        // Start full test
+        async function startTest() {
+            if (isTestRunning) return;
+            
+            log('🚀 เริ่มทดสอบทั้งหมด...', 'info');
+            
+            // Wait for app to be ready first
+            await waitForApp();
+            
+            await testProducts();
+            await delay(2000);
+            await testCheckout();
+            
+            log('🎉 ทดสอบทั้งหมดเสร็จสิ้น!', 'success');
+            log(`📊 สรุป: ทั้งหมด ${testStats.total} ผ่าน ${testStats.passed} ล้มเหลว ${testStats.failed}`, 'info');
+        }
+
+        // Clear log
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '<div class="log-entry">🤖 Test Runner พร้อมทำงาน...</div>';
+            testStats = { total: 0, passed: 0, failed: 0 };
+            updateStats();
+        }
+
+        // Reload app
+        function reloadApp() {
+            document.getElementById('testFrame').src = 'index.html';
+            log('🔄 รีโหลดแอปพลิเคชัน', 'info');
+        }
+
+        // Initialize
+        window.onload = function() {
+            log('✅ Test Runner เริ่มทำงาน', 'success');
+            updateStats();
+            
+            // Auto start test after 3 seconds
+            setTimeout(() => {
+                log('🤖 เริ่มทดสอบอัตโนมัติ...', 'info');
+                startTest();
+            }, 3000);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - จัดการคำสั่งซื้อ</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Admin-specific styles */
+        .admin-login {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #ff8c00, #e67e22);
+        }
+        
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .login-header h1 {
+            color: #2c3e50;
+            margin: 0 0 8px 0;
+            font-size: 1.8rem;
+        }
+        
+        .login-header p {
+            color: #6c757d;
+            margin: 0;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #ff8c00;
+            box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.1);
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: #ff8c00;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .login-btn:hover {
+            background: #e67e22;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .admin-panel {
+            display: none;
+        }
+        
+        .admin-nav {
+            background: #2c3e50;
+            color: white;
+            padding: 16px 0;
+        }
+        
+        .admin-nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .admin-nav h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        
+        .logout-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Form -->
+    <div class="admin-login" id="loginSection">
+        <div class="login-card">
+            <div class="login-header">
+                <h1><i class="fas fa-shield-alt"></i> Admin Panel</h1>
+                <p>เข้าสู่ระบบจัดการคำสั่งซื้อ</p>
+            </div>
+            
+            <div class="error-message" id="errorMessage">
+                ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">ชื่อผู้ใช้</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">รหัสผ่าน</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <button type="submit" class="login-btn">
+                </button>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <script src="github-storage.js"></script>
+    <script src="adminpanel.js"></script>
+    <div id="adminPanel">
+        <!-- Admin Navigation -->
+        <nav class="admin-nav">
+                <button class="nav-tab active" data-tab="orders">
+                    <i class="fas fa-list-alt"></i> คำสั่งซื้อ
+                </button>
+                    <i class="fas fa-chart-bar"></i> สถิติ
+                </button>
+                <button class="nav-tab" data-tab="github">
+                    <i class="fab fa-github"></i> GitHub
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="container">
+            <div class="admin-header">
+                <h2><i class="fas fa-clipboard-list"></i> รายการคำสั่งซื้อ</h2>
+                <p>ตรวจสอบและจัดการคำสั่งซื้อทั้งหมด</p>
+            </div>
+            
+            <div class="admin-filters">
+                <select id="orderStatusFilter" class="filter-select">
+                    <option value="all">ทุกสถานะ</option>
+                    <option value="pending">รอตรวจสอบ</option>
+                    <option value="confirmed">ยืนยันแล้ว</option>
+                    <option value="completed">เสร็จสิ้น</option>
+                    <option value="cancelled">ยกเลิก</option>
+                </select>
+                
+                <select id="paymentMethodFilter" class="filter-select">
+                    <option value="all">ทุกวิธีชำระ</option>
+                    <option value="cash">เงินสด</option>
+                    <option value="transfer">โอนเงิน</option>
+                    <option value="promptpay">PromptPay</option>
+                </select>
+                
+                <button class="refresh-btn" id="refreshOrders">
+                    <i class="fas fa-sync-alt"></i> รีเฟรช
+                </button>
+            </div>
+            
+            <div class="admin-orders-list" id="adminOrdersList">
+                <!-- Admin orders will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Tab -->
+    <div class="tab-content" id="stats">
+        <div class="admin-header">
+            <h2><i class="fas fa-chart-bar"></i> สถิติการขาย</h2>
+            <p>ข้อมูลสถิติและการวิเคราะห์</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="totalOrders">0</h3>
+                    <p>คำสั่งซื้อทั้งหมด</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="totalRevenue">฿0</h3>
+                    <p>ยอดขายรวม</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="pendingOrders">0</h3>
+                    <p>รอดำเนินการ</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="completedOrders">0</h3>
+                    <p>เสร็จสิ้นแล้ว</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GitHub Tab -->
+    <div class="tab-content" id="github">
+        <div class="admin-header">
+            <h2><i class="fab fa-github"></i> การตั้งค่า GitHub Storage</h2>
+            <p>เชื่อมต่อกับ GitHub Repository เพื่อเก็บข้อมูลคำสั่งซื้อ</p>
+        </div>
+
+        <!-- Connection Status -->
+        <div class="github-status" id="githubStatus">
+            <div class="status-indicator">
+                <i class="fas fa-circle" id="statusIcon"></i>
+                <span id="statusText">ไม่ได้เชื่อมต่อ</span>
+            </div>
+        </div>
+
+        <!-- GitHub Configuration -->
+        <div class="github-config">
+            <h3><i class="fas fa-cog"></i> การตั้งค่า</h3>
+            
+            <div class="form-group">
+                <label for="githubToken">
+                    <i class="fas fa-key"></i> Personal Access Token
+                    <span class="help-text">สร้างได้ที่ GitHub Settings > Developer settings > Personal access tokens</span>
+                </label>
+                <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+            </div>
+
+            <div class="form-group">
+                <label for="githubOwner">
+                    <i class="fas fa-user"></i> Username/Organization
+                </label>
+                <input type="text" id="githubOwner" placeholder="your-username">
+            </div>
+
+            <div class="form-group">
+                <label for="githubRepo">
+                    <i class="fas fa-folder"></i> Repository Name
+                    <span class="help-text">ต้องเป็น Private Repository</span>
+                </label>
+                <input type="text" id="githubRepo" placeholder="my-orders-repo">
+            </div>
+
+            <div class="github-actions">
+                <button class="btn btn-primary" onclick="testGitHubConnection()">
+                    <i class="fas fa-plug"></i> ทดสอบการเชื่อมต่อ
+                </button>
+                <button class="btn btn-success" onclick="saveGitHubConfig()">
+                    <i class="fas fa-save"></i> บันทึกการตั้งค่า
+                </button>
+                <button class="btn btn-warning" onclick="setupGitHubLabels()">
+                    <i class="fas fa-tags"></i> ตั้งค่า Labels
+                </button>
+            </div>
+        </div>
+
+        <!-- GitHub Statistics -->
+        <div class="github-stats" id="githubStats" style="display: none;">
+            <h3><i class="fas fa-chart-line"></i> สถิติ GitHub</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fab fa-github"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="githubTotalIssues">0</h3>
+                        <p>Issues ทั้งหมด</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="githubOpenIssues">0</h3>
+                        <p>Issues ที่เปิดอยู่</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="github-instructions">
+            <h3><i class="fas fa-info-circle"></i> วิธีการตั้งค่า</h3>
+            <ol>
+                <li>สร้าง <strong>Private Repository</strong> ใหม่บน GitHub</li>
+                <li>ไปที่ GitHub Settings → Developer settings → Personal access tokens</li>
+                <li>สร้าง Token ใหม่ด้วยสิทธิ์: <code>repo</code>, <code>issues</code></li>
+                <li>กรอกข้อมูลด้านบนแล้วคลิก "ทดสอบการเชื่อมต่อ"</li>
+                <li>หากเชื่อมต่อสำเร็จ ให้คลิก "ตั้งค่า Labels" เพื่อสร้าง Labels สำหรับจัดการสถานะ</li>
+            </ol>
+        </div>
+    </div>
+
+    <script src="github-storage.js"></script>
+    <script src="adminpanel.js"></script>
+    
+    <script>
+        // GitHub Configuration Functions
+        async function testGitHubConnection() {
+            const token = document.getElementById('githubToken').value;
+            const owner = document.getElementById('githubOwner').value;
+            const repo = document.getElementById('githubRepo').value;
+            
+            if (!token || !owner || !repo) {
+                alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+                return;
+            }
+            
+            // Set credentials temporarily for testing
+            window.githubStorage.setCredentials(token, owner, repo);
+            
+            const result = await window.githubStorage.testConnection();
+            
+            if (result.success) {
+                updateGitHubStatus('connected', result.message);
+                document.getElementById('githubStats').style.display = 'block';
+                alert('✅ เชื่อมต่อสำเร็จ!');
+            } else {
+                updateGitHubStatus('error', result.message);
+                alert('❌ ไม่สามารถเชื่อมต่อได้: ' + result.message);
+            }
+        }
+        
+        function saveGitHubConfig() {
+            const token = document.getElementById('githubToken').value;
+            const owner = document.getElementById('githubOwner').value;
+            const repo = document.getElementById('githubRepo').value;
+            
+            if (!token || !owner || !repo) {
+                alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+                return;
+            }
+            
+            window.githubStorage.setCredentials(token, owner, repo);
+            updateGitHubStatus('connected', 'บันทึกการตั้งค่าแล้ว');
+            alert('✅ บันทึกการตั้งค่าสำเร็จ!');
+        }
+        
+        async function setupGitHubLabels() {
+            if (!window.githubStorage.isConfigured()) {
+                alert('กรุณาตั้งค่าและทดสอบการเชื่อมต่อก่อน');
+                return;
+            }
+            
+            const results = await window.githubStorage.setupLabels();
+            const message = results.join('\n');
+            alert('ผลการตั้งค่า Labels:\n\n' + message);
+        }
+        
+        function updateGitHubStatus(status, message) {
+            const statusIcon = document.getElementById('statusIcon');
+            const statusText = document.getElementById('statusText');
+            
+            statusIcon.className = 'fas fa-circle';
+            
+            switch(status) {
+                case 'connected':
+                    statusIcon.style.color = '#28a745';
+                    statusText.textContent = 'เชื่อมต่อแล้ว';
+                    break;
+                case 'error':
+                    statusIcon.style.color = '#dc3545';
+                    statusText.textContent = 'เกิดข้อผิดพลาด';
+                    break;
+                default:
+                    statusIcon.style.color = '#6c757d';
+                    statusText.textContent = 'ไม่ได้เชื่อมต่อ';
+            }
+        }
+        
+        // Load saved configuration on page load
+        window.addEventListener('load', function() {
+            const token = localStorage.getItem('github_token');
+            const owner = localStorage.getItem('github_owner');
+            const repo = localStorage.getItem('github_repo');
+            
+            if (token) document.getElementById('githubToken').value = token;
+            if (owner) document.getElementById('githubOwner').value = owner;
+            if (repo) document.getElementById('githubRepo').value = repo;
+            
+            if (token && owner && repo) {
+                updateGitHubStatus('connected', 'พร้อมใช้งาน');
+                document.getElementById('githubStats').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

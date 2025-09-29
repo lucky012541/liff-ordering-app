@@ -7,11 +7,8 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <script>
-        // Initialize LIFF with your ID
-        liff.init({ liffId: '2006986568-yjrOkKqm' });
-    </script>
-</head>
+    <!-- Preload critical resources -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/sweetalert2@11" as="script">
 <body>
     <!-- Header -->
     <header class="header">
@@ -19,32 +16,21 @@
             <h1><i class="fas fa-shopping-cart"></i> สั่งซื้อสินค้า</h1>
             <div class="user-info" id="userInfo">
                 <span id="userName">กำลังโหลด...</span>
-                <div class="cart-icon" id="cartIcon">
-                    <i class="fas fa-shopping-bag"></i>
-                    <span class="cart-count" id="cartCount">0</span>
-                </div>
             </div>
         </div>
-    </header>
-
     <!-- Navigation -->
     <nav class="nav">
         <div class="container">
             <div class="nav-tabs">
-                <button class="nav-tab active" data-tab="products">
-                    <i class="fas fa-store"></i> สินค้า
-                </button>
-                <button class="nav-tab" data-tab="cart">
-                    <i class="fas fa-shopping-bag"></i> ตะกร้า
+                <button class="nav-tab active" data-tab="menu">
+                    <i class="fas fa-list"></i> รายการสินค้า
                 </button>
                 <button class="nav-tab" data-tab="orders">
-                    <i class="fas fa-list-alt"></i> คำสั่งซื้อ
+                    <i class="fas fa-receipt"></i> คำสั่งซื้อของฉัน
                 </button>
-                <!-- Admin tabs removed - admin functionality should only be accessible through admin.html with proper authentication -->
             </div>
         </div>
     </nav>
-
     <!-- Main Content -->
     <main class="main">
         <div class="container">
@@ -67,37 +53,20 @@
                 </div>
             </div>
 
-            <!-- Cart Tab -->
-            <div class="tab-content" id="cart">
-                <div class="cart-container">
-                    <div class="cart-items" id="cartItems">
-                        <!-- Cart items will be loaded here -->
-                    </div>
-                    <div class="cart-summary">
-                        <div class="summary-row">
-                            <span>ยอดรวม:</span>
-                            <span id="cartTotal">฿0</span>
-                        </div>
-                        <button class="checkout-btn" id="checkoutBtn" disabled>
-                            <i class="fas fa-credit-card"></i> ดำเนินการสั่งซื้อ
-                        </button>
-                    </div>
-                </div>
-            </div>
-
             <!-- Orders Tab -->
             <div class="tab-content" id="orders">
-                <div class="orders-container">
-                    <div class="orders-list" id="ordersList">
-                        <!-- Orders will be loaded here -->
+                <div class="orders-section">
+                    <h3><i class="fas fa-receipt"></i> คำสั่งซื้อของฉัน</h3>
+                    <div class="orders-list" id="userOrdersList">
+                        <!-- User orders will be loaded here -->
                     </div>
                 </div>
             </div>
 
-            <!-- Admin functionality removed from customer interface - only accessible through admin.html with proper authentication -->
         </div>
     </main>
 
+            <!-- Admin functionality removed from customer interface - only accessible through admin.html with proper authentication -->
     <!-- Product Modal -->
     <div class="modal" id="productModal">
         <div class="modal-content">
@@ -130,10 +99,50 @@
             <div class="modal-body">
                 <h3><i class="fas fa-shopping-cart"></i> ดำเนินการสั่งซื้อ</h3>
                 
-                <!-- Step 1: Delivery Information -->
-                <div class="checkout-step active" id="deliveryStep">
-                    <h4><i class="fas fa-truck"></i> ข้อมูลการจัดส่ง</h4>
-                    <form id="deliveryForm" class="checkout-form">
+                <!-- Stepper Indicator -->
+                <div class="stepper" id="checkoutStepper">
+                    <div class="step active" data-step="1">
+                        <div class="dot"><i class="fas fa-shopping-cart"></i></div>
+                        <div class="label">ตะกร้า</div>
+                    </div>
+                    <div class="step" data-step="2">
+                        <div class="dot"><i class="fas fa-user"></i></div>
+                        <div class="label">ข้อมูล</div>
+                    </div>
+                    <div class="step" data-step="3">
+                        <div class="dot"><i class="fas fa-credit-card"></i></div>
+                        <div class="label">ชำระเงิน</div>
+                    </div>
+                    <div class="step" data-step="4">
+                        <div class="dot"><i class="fas fa-check-circle"></i></div>
+                        <div class="label">ยืนยัน</div>
+                    </div>
+                    <div class="step" data-step="5">
+                        <div class="dot"><i class="fas fa-receipt"></i></div>
+                        <div class="label">เสร็จสิ้น</div>
+                    </div>
+                </div>
+                
+                <!-- Step 1: Cart Review -->
+                <div class="checkout-step active" id="cartReviewStep">
+                    <h4><i class="fas fa-shopping-cart"></i> ตรวจสอบรายการสินค้า</h4>
+                    <div class="cart-review-container">
+                        <div class="cart-items-review" id="cartItemsReview">
+                            <!-- Cart items will be populated here -->
+                        </div>
+                        <div class="cart-total-section">
+                            <div class="total-row">
+                                <span>รวมทั้งหมด:</span>
+                                <span class="total-price" id="cartTotalReview">฿0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Customer Information -->
+                <div class="checkout-step" id="customerInfoStep">
+                    <h4><i class="fas fa-user"></i> ข้อมูลลูกค้าและที่อยู่จัดส่ง</h4>
+                    <form id="customerForm" class="checkout-form">
                         <div class="form-group">
                             <label for="customerName">ชื่อ-นามสกุล *</label>
                             <input type="text" id="customerName" name="customerName" required>
@@ -153,7 +162,7 @@
                     </form>
                 </div>
 
-                <!-- Step 2: Payment Method -->
+                <!-- Step 3: Payment Method -->
                 <div class="checkout-step" id="paymentStep">
                     <h4><i class="fas fa-credit-card"></i> วิธีการชำระเงิน</h4>
                     <div class="payment-methods">
@@ -179,13 +188,32 @@
                             </div>
                         </label>
                     </div>
+                    <!-- Dynamic payment details -->
+                    <div class="payment-details" id="paymentDetailsPanel"></div>
                 </div>
-
-                <!-- Step 3: Order Summary -->
                 <div class="checkout-step" id="summaryStep">
-                    <h4><i class="fas fa-list-alt"></i> สรุปคำสั่งซื้อ</h4>
+                    <h4><i class="fas fa-check-circle"></i> สรุปคำสั่งซื้อ</h4>
                     <div class="order-summary" id="orderSummary">
                         <!-- Order summary will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Step 5: Receipt -->
+                <div class="checkout-step" id="receiptStep">
+                    <h4><i class="fas fa-receipt"></i> ใบเสร็จรับเงิน</h4>
+                    <div class="receipt" id="receiptContent">
+                        <!-- Receipt content will be injected here -->
+                    </div>
+                    <div class="receipt-actions">
+                        <button class="next-btn" id="shareReceiptBtn">
+                            <i class="fas fa-share"></i> แชร์ใบเสร็จ
+                        </button>
+                        <button class="next-btn" id="printReceiptBtn">
+                            <i class="fas fa-print"></i> พิมพ์/บันทึก PDF
+                        </button>
+                        <button class="prev-btn" id="closeReceiptBtn">
+                            <i class="fas fa-times"></i> ปิด
+                        </button>
                     </div>
                 </div>
 
@@ -220,6 +248,28 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Bottom App Bar -->
+    <div class="bottom-app-bar" id="bottomAppBar">
+        <div class="cart-summary-bar" id="cartSummaryBar">
+            <div class="cart-info" id="cartInfoMini">
+                <div class="cart-icon-mini">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="cart-count-mini" id="cartCountMini">0</span>
+                </div>
+                <div class="cart-details">
+                    <div class="cart-items-text" id="cartItemsText">0 รายการ</div>
+                    <div class="cart-total-text" id="cartTotalText">฿0</div>
+                </div>
+            </div>
+            <button class="checkout-btn-mini" id="checkoutBtnMini">
+                <span>สั่งซื้อ</span>
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        <!-- Load SweetAlert2 for better notifications -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <!-- Load GitHub Storage -->
+        <script src="github-storage.js"></script>
+        <!-- Load original script -->
+        <script src="script.js"></script>
 </body>
 </html>

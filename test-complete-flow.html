@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ทดสอบการทำงาน - LIFF Ordering App</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .test-btn { background: #ff8c00; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .test-btn:hover { background: #e67e22; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <h1>🧪 ทดสอบการทำงาน LIFF Ordering App</h1>
+
+    <div class="test-section">
+        <h3>1. การโหลดแอปพลิเคชัน</h3>
+        <button class="test-btn" onclick="testAppInitialization()">ทดสอบการโหลดแอป</button>
+        <div id="init-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. การแสดงสินค้า</h3>
+        <button class="test-btn" onclick="testProductDisplay()">ทดสอบการแสดงสินค้า</button>
+        <div id="product-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. การเพิ่มสินค้าในตะกร้า</h3>
+        <button class="test-btn" onclick="testAddToCart()">ทดสอบเพิ่มในตะกร้า</button>
+        <div id="cart-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. การชำระเงิน</h3>
+        <button class="test-btn" onclick="testPaymentFlow()">ทดสอบการชำระเงิน</button>
+        <div id="payment-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>5. การสั่งซื้อและใบเสร็จ</h3>
+        <button class="test-btn" onclick="testOrderCompletion()">ทดสอบการสั่งซื้อ</button>
+        <div id="order-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>6. การติดตามคำสั่งซื้อ</h3>
+        <button class="test-btn" onclick="testOrderTracking()">ทดสอบการติดตาม</button>
+        <div id="tracking-result"></div>
+    </div>
+
+    <script>
+        function updateResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<span class="${type}">${message}</span>`;
+        }
+
+        function testAppInitialization() {
+            try {
+                if (typeof app !== 'undefined') {
+                    updateResult('init-result', '✅ แอปโหลดสำเร็จ', 'success');
+                } else {
+                    updateResult('init-result', '❌ แอปยังไม่ได้โหลด', 'error');
+                }
+            } catch (error) {
+                updateResult('init-result', `❌ เกิดข้อผิดพลาด: ${error.message}`, 'error');
+            }
+        }
+
+        function testProductDisplay() {
+            try {
+                const productsGrid = document.getElementById('productsGrid');
+                if (productsGrid && productsGrid.children.length > 0) {
+                    updateResult('product-result', `✅ แสดงสินค้า ${productsGrid.children.length} รายการ`, 'success');
+                } else {
+                    updateResult('product-result', '❌ ไม่พบสินค้า', 'error');
+                }
+            } catch (error) {
+                updateResult('product-result', `❌ เกิดข้อผิดพลาด: ${error.message}`, 'error');
+            }
+        }
+
+        function testAddToCart() {
+            try {
+                if (typeof app !== 'undefined' && app.cart) {
+                    const initialCount = app.cart.length;
+                    // Add first product to cart
+                    app.addToCart(1, 1);
+                    const newCount = app.cart.length;
+
+                    if (newCount > initialCount) {
+                        updateResult('cart-result', `✅ เพิ่มสินค้าในตะกร้าแล้ว (${newCount} รายการ)`, 'success');
+                    } else {
+                        updateResult('cart-result', '❌ ไม่สามารถเพิ่มสินค้าในตะกร้า', 'error');
+                    }
+                } else {
+                    updateResult('cart-result', '❌ ไม่พบระบบตะกร้าสินค้า', 'error');
+                }
+            } catch (error) {
+                updateResult('cart-result', `❌ เกิดข้อผิดพลาด: ${error.message}`, 'error');
+            }
+        }
+
+        function testPaymentFlow() {
+            try {
+                if (typeof app !== 'undefined') {
+                    // Test payment method selection
+                    const paymentMethods = document.querySelectorAll('input[name="paymentMethod"]');
+                    if (paymentMethods.length > 0) {
+                        updateResult('payment-result', `✅ พบวิธีการชำระเงิน ${paymentMethods.length} วิธี`, 'success');
+                    } else {
+                        updateResult('payment-result', '❌ ไม่พบวิธีการชำระเงิน', 'error');
+                    }
+                } else {
+                    updateResult('payment-result', '❌ แอปยังไม่ได้โหลด', 'error');
+                }
+            } catch (error) {
+                updateResult('payment-result', `❌ เกิดข้อผิดพลาด: ${error.message}`, 'error');
+            }
+        }
+
+        function testOrderCompletion() {
+            try {
+                if (typeof app !== 'undefined' && app.orders) {
+                    const orderCount = app.orders.length;
+                    updateResult('order-result', `✅ พบคำสั่งซื้อ ${orderCount} รายการ`, 'success');
+                } else {
+                    updateResult('order-result', '❌ ไม่พบระบบคำสั่งซื้อ', 'error');
+                }
+            } catch (error) {
+                updateResult('order-result', `❌ เกิดข้อผิดพลาด: ${error.message}`, 'error');
+            }
+        }
+
+        function testOrderTracking() {
+            try {
+                if (typeof app !== 'undefined' && typeof app.showOrderTracking === 'function') {
+                    updateResult('tracking-result', '✅ ระบบติดตามคำสั่งซื้อพร้อมใช้งาน', 'success');
+                } else {
+                    updateResult('tracking-result', '❌ ไม่พบระบบติดตามคำสั่งซื้อ', 'error');
+                }
+            } catch (error) {
+                updateResult('tracking-result', `❌ เกิดข้อผิดพลาด: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run basic tests when page loads
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                testAppInitialization();
+                testProductDisplay();
+                testPaymentFlow();
+                testOrderCompletion();
+                testOrderTracking();
+            }, 2000);
+        });
+    </script>
+
+    <!-- Load the main app -->
+    <script src="script.js"></script>
+</body>
+</html>

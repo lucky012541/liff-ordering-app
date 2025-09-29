@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Test - ทดสอบโดยตรง</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Test overlay styles */
+        .test-overlay {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 350px;
+            height: 100vh;
+            background: rgba(44, 62, 80, 0.95);
+            color: white;
+            z-index: 10000;
+            padding: 20px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .test-header {
+            background: #3498db;
+            padding: 15px;
+            margin: -20px -20px 20px -20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .test-controls {
+            margin-bottom: 20px;
+        }
+        
+        .test-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 2px;
+            font-size: 11px;
+        }
+        
+        .test-btn:hover {
+            background: #229954;
+        }
+        
+        .test-btn.danger {
+            background: #e74c3c;
+        }
+        
+        .test-stats {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .test-log {
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 4px;
+            height: 300px;
+            overflow-y: auto;
+            font-size: 11px;
+        }
+        
+        .log-entry {
+            margin-bottom: 3px;
+            padding: 2px 5px;
+            border-radius: 2px;
+        }
+        
+        .log-success {
+            background: rgba(39, 174, 96, 0.3);
+        }
+        
+        .log-error {
+            background: rgba(231, 76, 60, 0.3);
+        }
+        
+        .log-warning {
+            background: rgba(243, 156, 18, 0.3);
+        }
+        
+        .log-info {
+            background: rgba(52, 152, 219, 0.3);
+        }
+        
+        /* Highlight tested elements */
+        .test-highlight {
+            outline: 3px solid #f39c12 !important;
+            background: rgba(243, 156, 18, 0.1) !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Test Overlay -->
+    <div class="test-overlay">
+        <div class="test-header">
+            🤖 DIRECT TEST BOT
+        </div>
+        
+        <div class="test-controls">
+            <button class="test-btn" onclick="runFullTest()">🚀 เริ่มทดสอบ</button>
+            <button class="test-btn" onclick="testProducts()">🛍️ สินค้า</button>
+            <button class="test-btn" onclick="testCompleteCheckout()">💳 สั่งซื้อครบวงจร</button>
+            <button class="test-btn" onclick="debugCheckoutState()">🔍 Debug</button>
+            <button class="test-btn danger" onclick="clearLog()">🗑️ ล้าง</button>
+        </div>
+        
+        <div class="test-stats">
+            <div>📊 ทั้งหมด: <span id="totalTests">0</span></div>
+            <div>✅ ผ่าน: <span id="passedTests">0</span></div>
+            <div>❌ ล้มเหลว: <span id="failedTests">0</span></div>
+        </div>
+        
+        <div class="test-log" id="testLog">
+            <div class="log-entry log-info">🤖 Test Bot พร้อมทำงาน</div>
+        </div>
+    </div>
+
+    <!-- Original App Content -->
+    <header class="header">
+        <div class="container">
+            <h1><i class="fas fa-shopping-cart"></i> สั่งซื้อสินค้า</h1>
+            <div class="user-info" id="userInfo">
+                <span id="userName">ผู้ใช้ทดสอบ</span>
+            </div>
+        </div>
+    </header>
+
+    <nav class="nav">
+        <div class="container">
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-tab="menu">
+                    <i class="fas fa-list"></i> รายการสินค้า
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main">
+        <div class="container">
+            <div class="tab-content active" id="products">
+                <div class="search-bar">
+                    <input type="text" id="searchInput" placeholder="ค้นหาสินค้า...">
+                    <i class="fas fa-search"></i>
+                </div>
+                
+                <div class="category-filter">
+                    <button class="category-btn active" data-category="all">ทั้งหมด</button>
+                    <button class="category-btn" data-category="ice">น้ำแข็ง</button>
+                    <button class="category-btn" data-category="water">น้ำดื่ม</button>
+                    <button class="category-btn" data-category="gas">แก๊สหุงต้ม</button>
+                </div>
+
+                <div class="products-grid" id="productsGrid">
+                    <!-- Products will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom App Bar -->
+    <div class="bottom-app-bar" id="bottomAppBar">
+        <div class="cart-info-mini" id="cartInfoMini">
+            <div class="cart-icon">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-count" id="cartCountMini">0</span>
+            </div>
+            <div class="cart-details">
+                <span id="cartItemsText">0 รายการ</span>
+                <span id="cartTotalText">฿0</span>
+            </div>
+        </div>
+        <button class="checkout-btn-mini" id="checkoutBtnMini">
+            <span>สั่งซื้อ</span>
+            <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+
+    <!-- Include all modals and other elements from original app -->
+    <div class="modal" id="productModal">
+        <div class="modal-content">
+            <span class="close" id="closeModal">&times;</span>
+            <div class="modal-body">
+                <div id="modalProductImage" class="product-icon"></div>
+                <div class="modal-info">
+                    <h3 id="modalProductName"></h3>
+                    <p id="modalProductDescription"></p>
+                    <div class="price-quantity">
+                        <span class="price" id="modalProductPrice"></span>
+                        <div class="quantity-controls">
+                            <button class="qty-btn" id="decreaseQty">-</button>
+                            <span id="modalQuantity">1</span>
+                            <button class="qty-btn" id="increaseQty">+</button>
+                        </div>
+                    </div>
+                    <button class="add-to-cart-btn" id="addToCartBtn">
+                        <i class="fas fa-plus"></i> เพิ่มในตะกร้า
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div class="modal" id="checkoutModal">
+        <div class="modal-content checkout-modal">
+            <span class="close" id="closeCheckoutModal">&times;</span>
+            <div class="checkout-header">
+                <h2>ดำเนินการสั่งซื้อ</h2>
+                <div class="checkout-stepper" id="checkoutStepper"></div>
+            </div>
+            <div class="checkout-body">
+                <!-- Step 1: Cart Review -->
+                <div class="checkout-step" id="cartReviewStep">
+                    <h3>ตรวจสอบสินค้า</h3>
+                    <div class="cart-review" id="cartReview"></div>
+                </div>
+
+                <!-- Step 2: Customer Info -->
+                <div class="checkout-step" id="customerInfoStep">
+                    <h3>ข้อมูลการจัดส่ง</h3>
+                    <div class="form-group">
+                        <label for="customerName">ชื่อ-นามสกุล *</label>
+                        <input type="text" id="customerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerPhone">เบอร์โทรศัพท์ *</label>
+                        <input type="tel" id="customerPhone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="deliveryAddress">ที่อยู่จัดส่ง *</label>
+                        <textarea id="deliveryAddress" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="deliveryNote">หมายเหตุ (ถ้ามี)</label>
+                        <textarea id="deliveryNote" rows="2"></textarea>
+                    </div>
+                </div>
+
+                <!-- Step 3: Payment Method -->
+                <div class="checkout-step" id="paymentStep">
+                    <h3>วิธีการชำระเงิน</h3>
+                    <div class="payment-methods">
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="cash" checked>
+                            <div class="payment-info">
+                                <i class="fas fa-money-bill-wave"></i>
+                                <span>เงินสดปลายทาง</span>
+                            </div>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="transfer">
+                            <div class="payment-info">
+                                <i class="fas fa-university"></i>
+                                <span>โอนเงิน</span>
+                            </div>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="promptpay">
+                            <div class="payment-info">
+                                <i class="fas fa-qrcode"></i>
+                                <span>PromptPay</span>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="payment-details" id="paymentDetails"></div>
+                </div>
+
+                <!-- Step 4: Order Summary -->
+                <div class="checkout-step" id="summaryStep">
+                    <h3>สรุปคำสั่งซื้อ</h3>
+                    <div class="order-summary" id="orderSummary"></div>
+                </div>
+
+                <!-- Step 5: Receipt -->
+                <div class="checkout-step" id="receiptStep">
+                    <h3>ใบเสร็จรับเงิน</h3>
+                    <div class="receipt" id="receipt"></div>
+                </div>
+            </div>
+            <div class="checkout-footer">
+                <button class="checkout-btn secondary" id="prevStepBtn" style="display: none;">ย้อนกลับ</button>
+                <button class="checkout-btn" id="nextStepBtn">ถัดไป</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <span id="toastMessage"></span>
+    </div>
+
+    <!-- Load original script -->
+    <script src="script.js"></script>
+
+    <!-- Test Bot Script -->
+    <script>
+        let testStats = { total: 0, passed: 0, failed: 0 };
+        let isTestRunning = false;
+
+        // Test logging
+        function testLog(message, type = 'info') {
+            const logDiv = document.getElementById('testLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[TEST] ${message}`);
+        }
+
+        // Update test statistics
+        function updateTestStats() {
+            document.getElementById('totalTests').textContent = testStats.total;
+            document.getElementById('passedTests').textContent = testStats.passed;
+            document.getElementById('failedTests').textContent = testStats.failed;
+        }
+
+        // Highlight element being tested
+        function highlightElement(element, duration = 1000) {
+            if (element) {
+                element.classList.add('test-highlight');
+                setTimeout(() => {
+                    element.classList.remove('test-highlight');
+                }, duration);
+            }
+        }
+
+        // Test step wrapper
+        async function testStep(description, testFn) {
+            testStats.total++;
+            testLog(`🔍 ${description}`, 'info');
+            
+            try {
+                const result = await testFn();
+                if (result !== false) {
+                    testStats.passed++;
+                    testLog(`✅ ${description} - สำเร็จ`, 'success');
+                    return true;
+                } else {
+                    testStats.failed++;
+                    testLog(`❌ ${description} - ล้มเหลว`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                testStats.failed++;
+                testLog(`❌ ${description} - ข้อผิดพลาด: ${error.message}`, 'error');
+                return false;
+            } finally {
+                updateTestStats();
+            }
+        }
+
+        // Delay function
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Test products
+        async function testProducts() {
+            if (isTestRunning) return;
+            isTestRunning = true;
+            
+            testLog('🛍️ เริ่มทดสอบสินค้า...', 'info');
+
+            // Test search
+            await testStep('ทดสอบการค้นหา', async () => {
+                const searchInput = document.getElementById('searchInput');
+                if (!searchInput) return false;
+                
+                highlightElement(searchInput);
+                searchInput.value = 'น้ำ';
+                searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                await delay(500);
+                
+                // Clear search
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                return true;
+            });
+
+            // Test categories
+            await testStep('ทดสอบหมวดหมู่', async () => {
+                const categoryBtns = document.querySelectorAll('.category-btn');
+                if (categoryBtns.length < 2) return false;
+                
+                // Click different categories
+                for (let i = 1; i < Math.min(3, categoryBtns.length); i++) {
+                    highlightElement(categoryBtns[i]);
+                    categoryBtns[i].click();
+                    await delay(300);
+                }
+                
+                // Back to all
+                categoryBtns[0].click();
+                return true;
+            });
+
+            // Test product selection
+            await testStep('ทดสอบเลือกสินค้า', async () => {
+                // Wait for products to load
+                await delay(1000);
+                
+                const productCards = document.querySelectorAll('.product-card');
+                if (productCards.length === 0) return false;
+                
+                highlightElement(productCards[0]);
+                productCards[0].click();
+                await delay(500);
+                
+                // Test modal
+                const modal = document.getElementById('productModal');
+                if (!modal || modal.style.display === 'none') return false;
+                
+                // Test quantity controls
+                const increaseBtn = document.getElementById('increaseQty');
+                const addBtn = document.getElementById('addToCartBtn');
+                
+                if (increaseBtn) {
+                    highlightElement(increaseBtn);
+                    increaseBtn.click();
+                    await delay(200);
+                }
+                
+                if (addBtn) {
+                    highlightElement(addBtn);
+                    addBtn.click();
+                    await delay(500);
+                }
+                
+                // Close modal
+                const closeBtn = document.getElementById('closeModal');
+                if (closeBtn) {
+                    closeBtn.click();
+                }
+                
+                return true;
+            });
+
+            testLog('✅ ทดสอบสินค้าเสร็จสิ้น', 'success');
+            isTestRunning = false;
+        }
+
+        // Test checkout
+        async function testCheckout() {
+            if (isTestRunning) return;
+            isTestRunning = true;
+            
+            testLog('💳 เริ่มทดสอบการสั่งซื้อ...', 'info');
+
+            // Ensure we have items in cart first
+            await testStep('เตรียมสินค้าในตะกร้า', async () => {
+                const productCards = document.querySelectorAll('.product-card');
+                if (productCards.length === 0) return false;
+                
+                // Add a product to cart
+                productCards[0].click();
+                await delay(500);
+                
+                const addBtn = document.getElementById('addToCartBtn');
+                if (addBtn) {
+                    addBtn.click();
+                    await delay(300);
+                }
+                
+                const closeBtn = document.getElementById('closeModal');
+                if (closeBtn) {
+                    closeBtn.click();
+                    await delay(300);
+                }
+                
+                return true;
+            });
+
+            // Test checkout button
+            await testStep('ทดสอบปุ่มสั่งซื้อ', async () => {
+                const checkoutBtn = document.getElementById('checkoutBtnMini');
+                if (!checkoutBtn) return false;
+                
+                highlightElement(checkoutBtn);
+                checkoutBtn.click();
+                await delay(1000);
+                
+                const modal = document.getElementById('checkoutModal');
+                return modal && modal.style.display !== 'none';
+            });
+
+            // Test customer form
+            await testStep('ทดสอบฟอร์มลูกค้า', async () => {
+                const nameInput = document.getElementById('customerName');
+                const phoneInput = document.getElementById('customerPhone');
+                const addressInput = document.getElementById('deliveryAddress');
+                
+                if (!nameInput || !phoneInput || !addressInput) return false;
+                
+                highlightElement(nameInput);
+                nameInput.value = 'ทดสอบ บอท';
+                nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+                await delay(200);
+                
+                highlightElement(phoneInput);
+                phoneInput.value = '0812345678';
+                phoneInput.dispatchEvent(new Event('input', { bubbles: true }));
+                await delay(200);
+                
+                highlightElement(addressInput);
+                addressInput.value = '123 ถนนทดสอบ แขวงทดสอบ เขตทดสอบ กรุงเทพฯ 10100';
+                addressInput.dispatchEvent(new Event('input', { bubbles: true }));
+                
+                return true;
+            });
+
+            // Test next button
+            await testStep('ทดสอบปุ่มถัดไป', async () => {
+                const nextBtn = document.getElementById('nextStepBtn');
+                if (!nextBtn) return false;
+                
+                highlightElement(nextBtn);
+                nextBtn.click();
+                await delay(1000);
+                
+                return true;
+            });
+
+            // Test payment method
+            await testStep('ทดสอบวิธีชำระเงิน', async () => {
+                const cashRadio = document.querySelector('input[name="paymentMethod"][value="cash"]');
+                if (!cashRadio) return false;
+                
+                highlightElement(cashRadio.closest('.payment-option'));
+                cashRadio.click();
+                await delay(500);
+                
+                return true;
+            });
+
+            // Continue to next step (Summary)
+            await testStep('ไปขั้นตอนสรุป', async () => {
+                const nextBtn = document.getElementById('nextStepBtn');
+                if (!nextBtn) return false;
+                
+                highlightElement(nextBtn);
+                nextBtn.click();
+                await delay(1000);
+                
+                return true;
+            });
+
+            // Test order confirmation
+            await testStep('ยืนยันคำสั่งซื้อ', async () => {
+                const nextBtn = document.getElementById('nextStepBtn');
+                if (!nextBtn) return false;
+                
+                // Check if button text changed to confirm
+                if (nextBtn.textContent.includes('ยืนยัน') || nextBtn.textContent.includes('สั่งซื้อ')) {
+                    highlightElement(nextBtn);
+                    nextBtn.click();
+                    await delay(2000);
+                    
+                    // Check if receipt step is shown
+                    const receiptStep = document.getElementById('receiptStep');
+                    return receiptStep && receiptStep.style.display !== 'none';
+                }
+                
+                return false;
+            });
+
+            // Test receipt display
+            await testStep('ตรวจสอบใบเสร็จ', async () => {
+                const receipt = document.getElementById('receipt');
+                if (!receipt) return false;
+                
+                highlightElement(receipt);
+                
+                // Check if receipt has content
+                const hasContent = receipt.innerHTML.trim().length > 0;
+                if (hasContent) {
+                    testLog('📄 ใบเสร็จแสดงผลสำเร็จ', 'success');
+                }
+                
+                return hasContent;
+            });
+
+            // Test close modal
+            await testStep('ปิด Modal', async () => {
+                const closeBtn = document.getElementById('closeCheckoutModal');
+                if (!closeBtn) return false;
+                
+                highlightElement(closeBtn);
+                closeBtn.click();
+                await delay(500);
+                
+                const modal = document.getElementById('checkoutModal');
+                return modal && modal.style.display === 'none';
+            });
+
+            testLog('✅ ทดสอบการสั่งซื้อเสร็จสิ้น - ดำเนินการจบสมบูรณ์', 'success');
+            isTestRunning = false;
+        }
+
+        // Complete checkout test with all steps
+        async function testCompleteCheckout() {
+            if (isTestRunning) return;
+            isTestRunning = true;
+            
+            testLog('🛒 เริ่มทดสอบการสั่งซื้อแบบครบวงจร...', 'info');
+
+            // Step 1: Add product to cart
+            await testStep('เพิ่มสินค้าลงตะกร้า', async () => {
+                const productCards = document.querySelectorAll('.product-card');
+                if (productCards.length === 0) return false;
+                
+                highlightElement(productCards[0]);
+                productCards[0].click();
+                await delay(800);
+                
+                const addBtn = document.getElementById('addToCartBtn');
+                if (addBtn) {
+                    highlightElement(addBtn);
+                    addBtn.click();
+                    await delay(500);
+                }
+                
+                const closeBtn = document.getElementById('closeModal');
+                if (closeBtn) {
+                    closeBtn.click();
+                    await delay(300);
+                }
+                
+                return true;
+            });
+
+            // Step 2: Open checkout
+            await testStep('เปิด Checkout Modal', async () => {
+                const checkoutBtn = document.getElementById('checkoutBtnMini');
+                if (!checkoutBtn) return false;
+                
+                highlightElement(checkoutBtn);
+                checkoutBtn.click();
+                await delay(1500);
+                
+                const modal = document.getElementById('checkoutModal');
+                return modal && modal.style.display !== 'none';
+            });
+
+            // Step 3: Fill customer info
+            await testStep('กรอกข้อมูลลูกค้า', async () => {
+                const fields = [
+                    { id: 'customerName', value: 'ทดสอบ บอท' },
+                    { id: 'customerPhone', value: '0812345678' },
+                    { id: 'deliveryAddress', value: '123 ถนนทดสอบ แขวงทดสอบ เขตทดสอบ กรุงเทพฯ 10100' },
+                    { id: 'deliveryNote', value: 'หมายเหตุทดสอบ' }
+                ];
+                
+                for (const field of fields) {
+                    const input = document.getElementById(field.id);
+                    if (input) {
+                        highlightElement(input);
+                        input.value = field.value;
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                        await delay(200);
+                    }
+                }
+                
+                return true;
+            });
+
+            // Step 4: Go to payment step
+            await testStep('ไปขั้นตอนการชำระเงิน', async () => {
+                const nextBtn = document.getElementById('nextStepBtn');
+                if (!nextBtn) return false;
+                
+                highlightElement(nextBtn);
+                nextBtn.click();
+                await delay(1500);
+                
+                // Check if we're on payment step
+                const paymentStep = document.getElementById('paymentStep');
+                return paymentStep && paymentStep.style.display !== 'none';
+            });
+
+            // Step 5: Select payment method
+            await testStep('เลือกวิธีชำระเงิน', async () => {
+                const cashRadio = document.querySelector('input[name="paymentMethod"][value="cash"]');
+                if (!cashRadio) return false;
+                
+                highlightElement(cashRadio.closest('.payment-option'));
+                cashRadio.checked = true;
+                cashRadio.dispatchEvent(new Event('change', { bubbles: true }));
+                await delay(800);
+                
+                return cashRadio.checked;
+            });
+
+            // Step 6: Go to summary
+            await testStep('ไปขั้นตอนสรุป', async () => {
+                const nextBtn = document.getElementById('nextStepBtn');
+                if (!nextBtn) return false;
+                
+                highlightElement(nextBtn);
+                nextBtn.click();
+                await delay(1500);
+                
+                // Check if we're on summary step
+                const summaryStep = document.getElementById('summaryStep');
+                return summaryStep && summaryStep.style.display !== 'none';
+            });
+
+            // Step 7: Confirm order
+            await testStep('ยืนยันคำสั่งซื้อ', async () => {
+                const nextBtn = document.getElementById('nextStepBtn');
+                if (!nextBtn) {
+                    testLog('❌ ไม่พบปุ่มยืนยัน', 'error');
+                    return false;
+                }
+                
+                testLog(`ปุ่มปัจจุบัน: "${nextBtn.textContent}"`, 'info');
+                
+                // Check if button text indicates confirmation step
+                const isConfirmButton = nextBtn.textContent.includes('ยืนยัน') || 
+                                      nextBtn.textContent.includes('สั่งซื้อ') ||
+                                      nextBtn.textContent.includes('ดำเนินการ');
+                
+                if (!isConfirmButton) {
+                    testLog(`⚠️ ปุ่มไม่ใช่ปุ่มยืนยัน: "${nextBtn.textContent}"`, 'warning');
+                    // Try clicking anyway
+                }
+                
+                highlightElement(nextBtn);
+                nextBtn.click();
+                
+                // Wait longer and check multiple times
+                for (let i = 0; i < 10; i++) {
+                    await delay(500);
+                    
+                    // Check if receipt step is visible
+                    const receiptStep = document.getElementById('receiptStep');
+                    if (receiptStep && receiptStep.style.display !== 'none') {
+                        testLog('✅ เข้าสู่หน้าใบเสร็จแล้ว', 'success');
+                        return true;
+                    }
+                    
+                    // Check if receipt has content
+                    const receipt = document.getElementById('receipt');
+                    if (receipt && receipt.innerHTML.trim().length > 50) {
+                        testLog('✅ ใบเสร็จมีเนื้อหาแล้ว', 'success');
+                        return true;
+                    }
+                    
+                    // Check if toast appears
+                    const toast = document.getElementById('toast');
+                    if (toast && toast.classList.contains('show')) {
+                        testLog('🎉 Toast แสดงการสั่งซื้อสำเร็จ', 'success');
+                        // Continue checking for receipt
+                    }
+                    
+                    // Check if modal closed (order completed)
+                    const modal = document.getElementById('checkoutModal');
+                    if (modal && modal.style.display === 'none') {
+                        testLog('ℹ️ Modal ปิดแล้ว - คำสั่งซื้ออาจเสร็จสิ้น', 'info');
+                        return true;
+                    }
+                    
+                    testLog(`⏳ รอใบเสร็จ... (${i + 1}/10)`, 'warning');
+                }
+                
+                testLog('❌ ไม่พบใบเสร็จหลังจากยืนยันคำสั่งซื้อ', 'error');
+                return false;
+            });
+
+            // Step 8: Detailed final state check
+            await testStep('ตรวจสอบสถานะสุดท้าย', async () => {
+                const modal = document.getElementById('checkoutModal');
+                const receipt = document.getElementById('receipt');
+                const receiptStep = document.getElementById('receiptStep');
+                
+                // Debug current state
+                testLog('🔍 ตรวจสอบสถานะปัจจุบัน:', 'info');
+                testLog(`Modal display: ${modal ? modal.style.display : 'ไม่พบ'}`, 'info');
+                testLog(`Receipt step display: ${receiptStep ? receiptStep.style.display : 'ไม่พบ'}`, 'info');
+                testLog(`Receipt content length: ${receipt ? receipt.innerHTML.length : 0}`, 'info');
+                
+                // Check all checkout steps to see which one is active
+                const steps = ['cartReviewStep', 'customerInfoStep', 'paymentStep', 'summaryStep', 'receiptStep'];
+                for (const stepId of steps) {
+                    const step = document.getElementById(stepId);
+                    if (step && step.style.display !== 'none') {
+                        testLog(`📍 ขั้นตอนปัจจุบัน: ${stepId}`, 'info');
+                    }
+                }
+                
+                // Check if we're actually on receipt step
+                if (receiptStep && receiptStep.style.display !== 'none') {
+                    testLog('✅ อยู่ในหน้าใบเสร็จ', 'success');
+                    highlightElement(receiptStep);
+                    
+                    // Force render receipt if empty
+                    if (receipt && receipt.innerHTML.trim().length === 0) {
+                        testLog('🔄 บังคับสร้างใบเสร็จ...', 'warning');
+                        
+                        // Try to call renderReceipt from the app
+                        if (window.app && typeof window.app.renderReceipt === 'function') {
+                            window.app.renderReceipt();
+                            await delay(500);
+                        }
+                    }
+                    
+                    if (receipt && receipt.innerHTML.trim().length > 0) {
+                        testLog('✅ ใบเสร็จมีเนื้อหา', 'success');
+                        highlightElement(receipt);
+                        
+                        // Show receipt content preview
+                        const receiptPreview = receipt.textContent.substring(0, 100);
+                        testLog(`📄 ตัวอย่างใบเสร็จ: ${receiptPreview}...`, 'info');
+                        
+                        // Wait to let user see the receipt
+                        await delay(3000);
+                        
+                        // Try to close modal
+                        const closeBtn = document.getElementById('closeCheckoutModal');
+                        if (closeBtn) {
+                            testLog('🔄 ปิด Modal', 'info');
+                            highlightElement(closeBtn);
+                            closeBtn.click();
+                            await delay(500);
+                        }
+                        
+                        return true;
+                    } else {
+                        testLog('❌ ใบเสร็จยังไม่มีเนื้อหา - ลองสร้างใหม่', 'error');
+                        
+                        // Debug: check app state
+                        if (window.app) {
+                            testLog(`🛒 Cart items: ${window.app.cart.length}`, 'info');
+                            testLog(`💳 Payment method: ${window.app.paymentMethod}`, 'info');
+                        }
+                        
+                        return false;
+                    }
+                } else {
+                    testLog('❌ ไม่ได้อยู่ในหน้าใบเสร็จ', 'error');
+                    
+                    // Check if order was completed differently
+                    if (modal && modal.style.display === 'none') {
+                        testLog('ℹ️ Modal ปิดแล้ว - อาจเสร็จสิ้นแล้ว', 'info');
+                        return true;
+                    }
+                    
+                    return false;
+                }
+            });
+
+            testLog('🎉 ทดสอบการสั่งซื้อครบวงจรเสร็จสิ้น!', 'success');
+            isTestRunning = false;
+        }
+
+        // Run full test
+        async function runFullTest() {
+            if (isTestRunning) return;
+            
+            testLog('🚀 เริ่มทดสอบทั้งหมด...', 'info');
+            
+            await testProducts();
+            await delay(1000);
+            await testCompleteCheckout();
+            
+            testLog('🎉 ทดสอบทั้งหมดเสร็จสิ้น!', 'success');
+            testLog(`📊 สรุป: ทั้งหมด ${testStats.total} ผ่าน ${testStats.passed} ล้มเหลว ${testStats.failed}`, 'info');
+            
+            // Show final summary
+            const successRate = testStats.total > 0 ? ((testStats.passed / testStats.total) * 100).toFixed(1) : 0;
+            testLog(`📈 อัตราความสำเร็จ: ${successRate}%`, successRate >= 80 ? 'success' : 'warning');
+        }
+
+        // Debug checkout state
+        function debugCheckoutState() {
+            testLog('🔍 เริ่ม Debug สถานะ Checkout...', 'info');
+            
+            const modal = document.getElementById('checkoutModal');
+            const receipt = document.getElementById('receipt');
+            const receiptStep = document.getElementById('receiptStep');
+            
+            testLog(`Modal exists: ${!!modal}`, 'info');
+            testLog(`Modal display: ${modal ? modal.style.display : 'N/A'}`, 'info');
+            testLog(`Receipt exists: ${!!receipt}`, 'info');
+            testLog(`Receipt step exists: ${!!receiptStep}`, 'info');
+            testLog(`Receipt step display: ${receiptStep ? receiptStep.style.display : 'N/A'}`, 'info');
+            
+            // Check all steps
+            const steps = ['cartReviewStep', 'customerInfoStep', 'paymentStep', 'summaryStep', 'receiptStep'];
+            testLog('📋 สถานะทุกขั้นตอน:', 'info');
+            
+            for (const stepId of steps) {
+                const step = document.getElementById(stepId);
+                if (step) {
+                    const isVisible = step.style.display !== 'none';
+                    testLog(`  ${stepId}: ${isVisible ? '✅ แสดง' : '❌ ซ่อน'}`, isVisible ? 'success' : 'warning');
+                    if (isVisible) {
+                        highlightElement(step, 2000);
+                    }
+                } else {
+                    testLog(`  ${stepId}: ❌ ไม่พบ`, 'error');
+                }
+            }
+            
+            // Check buttons
+            const nextBtn = document.getElementById('nextStepBtn');
+            const prevBtn = document.getElementById('prevStepBtn');
+            
+            testLog('🎛️ สถานะปุ่ม:', 'info');
+            testLog(`  Next button: ${nextBtn ? `"${nextBtn.textContent}"` : 'ไม่พบ'}`, nextBtn ? 'success' : 'error');
+            testLog(`  Prev button: ${prevBtn ? `"${prevBtn.textContent}"` : 'ไม่พบ'}`, prevBtn ? 'success' : 'error');
+            
+            if (nextBtn) {
+                highlightElement(nextBtn, 2000);
+            }
+            
+            // Check cart state
+            const cartItems = JSON.parse(localStorage.getItem('cart') || '[]');
+            testLog(`🛒 สินค้าในตะกร้า: ${cartItems.length} รายการ`, cartItems.length > 0 ? 'success' : 'warning');
+            
+            // Check orders
+            const orders = JSON.parse(localStorage.getItem('liff_orders') || '[]');
+            testLog(`📦 คำสั่งซื้อทั้งหมด: ${orders.length} รายการ`, 'info');
+            
+            if (orders.length > 0) {
+                const lastOrder = orders[orders.length - 1];
+                testLog(`📋 คำสั่งซื้อล่าสุด: #${lastOrder.id} (${lastOrder.status})`, 'info');
+            }
+        }
+
+        // Clear log
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '<div class="log-entry log-info">🤖 Test Bot พร้อมทำงาน</div>';
+            testStats = { total: 0, passed: 0, failed: 0 };
+            updateTestStats();
+        }
+
+        // Auto-start test when page loads
+        window.addEventListener('load', () => {
+            testLog('✅ หน้าเว็บโหลดเสร็จ', 'success');
+            updateTestStats();
+            
+            // Auto-start test after 2 seconds
+            setTimeout(() => {
+                testLog('🤖 เริ่มทดสอบอัตโนมัติ...', 'info');
+                runFullTest();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

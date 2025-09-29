@@ -5,7 +5,9 @@
   "main": "index.html",
   "scripts": {
     "start": "npx http-server . -p 3000 -o",
-    "dev": "npx live-server --port=3000"
+    "dev": "npx live-server --port=3000 --open=/test-complete-flow.html",
+    "build": "echo 'Static app - no build needed'",
+    "test": "npx live-server --port=3001 --open=/test-complete-flow.html"
   },
   "keywords": ["liff", "line", "ordering", "ecommerce", "mini-app"],
   "author": "Your Name",
