@@ -1072,29 +1072,35 @@ class OrderingApp {
         }
 
         // For transfer and promptpay, check if slip is uploaded (production only)
+        // ⚠️ RELAXED MODE: Make slip upload optional, warn but allow proceed
         if (paymentMethod === 'transfer') {
             const transferSlip = document.getElementById('transferSlip');
             if (!transferSlip || !transferSlip.files || transferSlip.files.length === 0) {
-                this.showToast('กรุณาอัปโหลดสลิปการโอนเงิน', 'error');
-                if (transferSlip) transferSlip.focus();
-                return false;
+                console.log('⚠️ No transfer slip uploaded, but allowing to proceed');
+                this.showToast('⚠️ ยังไม่ได้อัปโหลดสลิป แอดมินจะตรวจสอบภายหลัง', 'warning');
+                this.paymentVerified = false; // Mark as unverified
+                this.paymentSlipDataUrl = null;
+                return true; // Allow to proceed
             }
             // Basic slip verification
             this.paymentVerified = this.verifyPaymentSlip(transferSlip.files[0]);
         } else if (paymentMethod === 'promptpay') {
             const paymentSlip = document.getElementById('paymentSlip');
             if (!paymentSlip || !paymentSlip.files || paymentSlip.files.length === 0) {
-                this.showToast('กรุณาอัปโหลดสลิป PromptPay', 'error');
-                if (paymentSlip) paymentSlip.focus();
-                return false;
+                console.log('⚠️ No PromptPay slip uploaded, but allowing to proceed');
+                this.showToast('⚠️ ยังไม่ได้อัปโหลดสลิป แอดมินจะตรวจสอบภายหลัง', 'warning');
+                this.paymentVerified = false; // Mark as unverified
+                this.paymentSlipDataUrl = null;
+                return true; // Allow to proceed
             }
             // Basic slip verification
             this.paymentVerified = this.verifyPaymentSlip(paymentSlip.files[0]);
         }
 
-        if (!this.paymentVerified) {
-            this.showToast('กรุณาอัปโหลดสลิปการชำระเงินที่ถูกต้อง', 'error');
-            return false;
+        // ⚠️ RELAXED: Allow unverified payments (admin will check later)
+        if (!this.paymentVerified && (paymentMethod === 'transfer' || paymentMethod === 'promptpay')) {
+            console.log('⚠️ Payment not verified, but allowing to proceed');
+            // Don't block, just warn (already showed toast above)
         }
 
         console.log('✅ Payment method validated successfully');
