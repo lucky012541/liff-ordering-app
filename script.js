@@ -1623,23 +1623,26 @@ class OrderingApp {
             console.log('👤 Order userId:', order.userId);
             
             // 💾 Save to GitHub Issues (Database)
+            // Run in background - don't block order completion
             if (window.githubStorage && window.githubStorage.isConfigured()) {
-                console.log('📤 Saving to GitHub Issues database...');
-                try {
-                    const githubResult = await window.githubStorage.createOrder(order);
-                    if (githubResult && githubResult.issueNumber) {
-                        console.log('✅ บันทึกลง GitHub สำเร็จ! Issue #' + githubResult.issueNumber);
-                        order.githubIssueNumber = githubResult.issueNumber;
-                        this.saveOrders(); // Update with issue number
-                    } else {
-                        console.warn('⚠️ GitHub save returned no issue number');
+                console.log('📤 Saving to GitHub Issues database (background)...');
+                setTimeout(async () => {
+                    try {
+                        const githubResult = await window.githubStorage.createOrder(order);
+                        if (githubResult && githubResult.issueNumber) {
+                            console.log('✅ บันทึกลง GitHub สำเร็จ! Issue #' + githubResult.issueNumber);
+                            order.githubIssueNumber = githubResult.issueNumber;
+                            this.saveOrders(); // Update with issue number
+                        } else {
+                            console.warn('⚠️ GitHub save returned no issue number');
+                        }
+                    } catch (githubError) {
+                        console.error('❌ GitHub Storage Error:', githubError);
+                        console.log('💾 Order saved in LocalStorage anyway');
                     }
-                } catch (githubError) {
-                    console.error('❌ GitHub Storage Error:', githubError);
-                    // Don't block order - continue anyway
-                }
+                }, 100); // Small delay to not block UI
             } else {
-                console.warn('⚠️ GitHub Storage ไม่ได้ตั้งค่า - เก็บใน LocalStorage เท่านั้น');
+                console.log('ℹ️ GitHub Storage not configured - using LocalStorage only');
             }
 
             // 🔧 DEVELOPMENT MODE: Skip LINE message sending
@@ -1671,28 +1674,27 @@ class OrderingApp {
             }
 
             // Send order notification to LINE (production only)
-            console.log('📱 Sending LINE message...');
-            let messageSent = false;
+            // Non-blocking: don't wait for LINE message
+            console.log('📱 Sending LINE message (background)...');
             
-            try {
-                messageSent = await this.sendOrderFlexMessage(order);
-            } catch (error) {
-                console.error('❌ Failed to send LINE message:', error);
-                messageSent = false;
-            }
+            // Send in background
+            this.sendOrderFlexMessage(order).then(success => {
+                if (success) {
+                    console.log('✅ LINE notification sent successfully');
+                } else {
+                    console.log('⚠️ LINE notification failed (but order is saved)');
+                }
+            }).catch(error => {
+                console.error('❌ LINE message error:', error);
+            });
 
-            // Clear cart and update UI (regardless of message status)
+            // Clear cart and update UI immediately
             this.cart = [];
             this.saveCart();
             this.updateCartUI();
 
-            if (messageSent) {
-                // Show success message
-                this.showToast('✅ สั่งซื้อสำเร็จ! หมายเลขคำสั่งซื้อ: ' + order.orderNumber, 'success');
-            } else {
-                // If LINE message failed, still show receipt but warn user
-                this.showToast('✅ สั่งซื้อสำเร็จ! (ไม่ส่งแจ้งเตือน LINE) หมายเลข: ' + order.orderNumber, 'success');
-            }
+            // Always show success (order is already saved)
+            this.showToast('✅ สั่งซื้อสำเร็จ! หมายเลข: ' + order.orderNumber, 'success');
 
             // Show receipt
             this.showReceiptStep(order);
@@ -1709,8 +1711,45 @@ class OrderingApp {
             console.log('🎉 Order process completed');
 
         } catch (error) {
-            console.error('Order confirmation error:', error);
-            this.showToast('❌ เกิดข้อผิดพลาดในการสั่งซื้อ กรุณาลองใหม่', 'error');
+            console.error('❌ Order confirmation error:', error);
+            console.error('Error details:', {
+                message: error.message,
+                stack: error.stack,
+                loginRequired: this.loginRequired,
+                currentUser: this.currentUser,
+                cart: this.cart.length,
+                customerInfo: this.customerInfo,
+                paymentMethod: this.paymentMethod
+            });
+            
+            // Show detailed error
+            let errorMsg = '❌ เกิดข้อผิดพลาด: ' + (error.message || 'Unknown error');
+            this.showToast(errorMsg, 'error');
+            
+            // Try to save order anyway if data exists
+            if (this.cart.length > 0 && this.customerInfo && this.customerInfo.customerName) {
+                console.log('🔄 Attempting emergency save...');
+                try {
+                    const emergencyOrder = {
+                        id: Date.now(),
+                        items: [...this.cart],
+                        customer: this.customerInfo,
+                        paymentMethod: this.paymentMethod || 'cash',
+                        total: this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+                        date: new Date().toLocaleString('th-TH'),
+                        status: 'pending',
+                        userId: this.currentUser ? this.currentUser.userId : 'guest',
+                        orderNumber: this.generateOrderNumber(),
+                        error: error.message
+                    };
+                    this.orders.unshift(emergencyOrder);
+                    this.saveOrders();
+                    console.log('✅ Emergency save successful');
+                    this.showToast('⚠️ บันทึกคำสั่งซื้อไว้แล้ว แต่อาจมีข้อผิดพลาด', 'warning');
+                } catch (saveError) {
+                    console.error('❌ Emergency save failed:', saveError);
+                }
+            }
         }
     }
 
