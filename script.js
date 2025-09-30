@@ -872,15 +872,23 @@ class OrderingApp {
 
 
     showSummaryStep() {
+        console.log('📋 Showing summary step');
         this.checkoutStep = 4;
         this.hideAllSteps();
         
         const summaryStep = document.getElementById('summaryStep');
-        if (summaryStep) summaryStep.classList.add('active');
+        if (!summaryStep) {
+            console.log('❌ Summary step element not found');
+            return;
+        }
+        
+        console.log('✅ Summary step element found, activating...');
+        summaryStep.classList.add('active');
         
         this.renderOrderSummary();
         this.updateCheckoutButtons();
         this.renderStepper();
+        console.log('📋 Summary step activated successfully');
     }
 
     async showReceiptStep() {
@@ -1528,12 +1536,16 @@ class OrderingApp {
     }
 
     async confirmOrder() {
+        console.log('🎯 confirmOrder() called!');
         try {
             // Validate payment before proceeding
+            console.log('🔍 Validating payment before order confirmation...');
             if (!this.validatePaymentMethod()) {
+                console.log('❌ Payment validation failed in confirmOrder');
                 return;
             }
 
+            console.log('✅ Payment validated, proceeding with order...');
             this.showToast('กำลังดำเนินการสั่งซื้อ...', 'info');
 
             // Get payment slip if uploaded
