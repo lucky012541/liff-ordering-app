@@ -2712,7 +2712,7 @@ ${itemsText}
 
         // Filter orders by current user
         // ในโหมดพัฒนา (dev_fallback) แสดงทุก order
-        const isDevelopment = this.currentUser && this.currentUser.userId.startsWith('dev_');
+        const isDevelopment = this.currentUser && this.currentUser.userId && this.currentUser.userId.startsWith('dev_');
         
         const userOrders = isDevelopment 
             ? this.orders  // Development mode: show all orders
@@ -2720,7 +2720,7 @@ ${itemsText}
                 !this.currentUser || 
                 order.userId === this.currentUser.userId || 
                 order.userId === 'guest' ||
-                order.userId.startsWith('dev_')  // Include dev orders for debugging
+                (order.userId && order.userId.startsWith('dev_'))  // Include dev orders for debugging
             );
         
         console.log('👤 User orders:', userOrders.length);
