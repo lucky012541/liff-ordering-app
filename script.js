@@ -1072,35 +1072,42 @@ class OrderingApp {
         }
 
         // For transfer and promptpay, check if slip is uploaded (production only)
-        // ⚠️ RELAXED MODE: Make slip upload optional, warn but allow proceed
         if (paymentMethod === 'transfer') {
             const transferSlip = document.getElementById('transferSlip');
+            console.log('📎 Transfer slip input:', transferSlip);
+            console.log('📎 Files:', transferSlip?.files);
+            
             if (!transferSlip || !transferSlip.files || transferSlip.files.length === 0) {
-                console.log('⚠️ No transfer slip uploaded, but allowing to proceed');
-                this.showToast('⚠️ ยังไม่ได้อัปโหลดสลิป แอดมินจะตรวจสอบภายหลัง', 'warning');
-                this.paymentVerified = false; // Mark as unverified
-                this.paymentSlipDataUrl = null;
-                return true; // Allow to proceed
+                console.log('❌ No transfer slip uploaded');
+                this.showToast('❌ กรุณาอัปโหลดสลิปการโอนเงิน', 'error');
+                // Scroll to payment section
+                const panel = document.getElementById('paymentDetailsPanel');
+                if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return false;
             }
             // Basic slip verification
             this.paymentVerified = this.verifyPaymentSlip(transferSlip.files[0]);
+            if (!this.paymentVerified) {
+                return false;
+            }
         } else if (paymentMethod === 'promptpay') {
             const paymentSlip = document.getElementById('paymentSlip');
+            console.log('📎 PromptPay slip input:', paymentSlip);
+            console.log('📎 Files:', paymentSlip?.files);
+            
             if (!paymentSlip || !paymentSlip.files || paymentSlip.files.length === 0) {
-                console.log('⚠️ No PromptPay slip uploaded, but allowing to proceed');
-                this.showToast('⚠️ ยังไม่ได้อัปโหลดสลิป แอดมินจะตรวจสอบภายหลัง', 'warning');
-                this.paymentVerified = false; // Mark as unverified
-                this.paymentSlipDataUrl = null;
-                return true; // Allow to proceed
+                console.log('❌ No PromptPay slip uploaded');
+                this.showToast('❌ กรุณาอัปโหลดสลิป PromptPay', 'error');
+                // Scroll to payment section
+                const panel = document.getElementById('paymentDetailsPanel');
+                if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return false;
             }
             // Basic slip verification
             this.paymentVerified = this.verifyPaymentSlip(paymentSlip.files[0]);
-        }
-
-        // ⚠️ RELAXED: Allow unverified payments (admin will check later)
-        if (!this.paymentVerified && (paymentMethod === 'transfer' || paymentMethod === 'promptpay')) {
-            console.log('⚠️ Payment not verified, but allowing to proceed');
-            // Don't block, just warn (already showed toast above)
+            if (!this.paymentVerified) {
+                return false;
+            }
         }
 
         console.log('✅ Payment method validated successfully');
@@ -1245,12 +1252,15 @@ class OrderingApp {
         const preview = document.getElementById('transferSlipPreview');
         if (input.files && input.files[0] && preview) {
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = (e) => {
                 preview.src = e.target.result;
                 preview.style.display = 'block';
+                // Save slip data URL
+                this.paymentSlipDataUrl = e.target.result;
+                console.log('💾 Saved transfer slip data URL');
             };
             reader.readAsDataURL(input.files[0]);
-            this.showToast('อัปโหลดสลิปการโอนเงินแล้ว', 'success');
+            this.showToast('✅ อัปโหลดสลิปการโอนเงินแล้ว', 'success');
         }
     }
 
@@ -1258,12 +1268,15 @@ class OrderingApp {
         const preview = document.getElementById('paymentSlipPreview');
         if (input.files && input.files[0] && preview) {
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = (e) => {
                 preview.src = e.target.result;
                 preview.style.display = 'block';
+                // Save slip data URL
+                this.paymentSlipDataUrl = e.target.result;
+                console.log('💾 Saved PromptPay slip data URL');
             };
             reader.readAsDataURL(input.files[0]);
-            this.showToast('อัปโหลดสลิป PromptPay แล้ว', 'success');
+            this.showToast('✅ อัปโหลดสลิป PromptPay แล้ว', 'success');
         }
     }
 
