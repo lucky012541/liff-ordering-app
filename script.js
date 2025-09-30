@@ -870,17 +870,6 @@ class OrderingApp {
     }
 
 
-    showPaymentStep() {
-        this.checkoutStep = 3;
-        this.hideAllSteps();
-        
-        const paymentStep = document.getElementById('paymentStep');
-        if (paymentStep) paymentStep.classList.add('active');
-        
-        this.updatePaymentDetailsPanel();
-        this.updateCheckoutButtons();
-        this.renderStepper();
-    }
 
     showSummaryStep() {
         this.checkoutStep = 4;
@@ -1428,20 +1417,23 @@ class OrderingApp {
     }
 
     showPaymentStep() {
-        this.checkoutStep = 2;
-        document.querySelectorAll('.checkout-step').forEach(step => step.classList.remove('active'));
+        console.log('💳 Showing payment step');
+        this.checkoutStep = 3;
+        this.hideAllSteps();
+        
         const paymentStep = document.getElementById('paymentStep');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        const confirmOrderBtn = document.getElementById('confirmOrderBtn');
-        if (!paymentStep || !prevBtn || !nextBtn || !confirmOrderBtn) return;
+        if (!paymentStep) {
+            console.log('❌ Payment step element not found');
+            return;
+        }
+        
+        console.log('✅ Payment step element found, activating...');
         paymentStep.classList.add('active');
         
-        prevBtn.style.display = 'inline-flex';
-        nextBtn.style.display = 'inline-flex';
-        confirmOrderBtn.style.display = 'none';
         this.updatePaymentDetailsPanel();
+        this.updateCheckoutButtons();
         this.renderStepper();
+        console.log('💳 Payment step activated successfully');
     }
 
     showSummaryStep() {
