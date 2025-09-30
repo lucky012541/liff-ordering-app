@@ -1879,7 +1879,7 @@ class OrderingApp {
             const permissions = liff.getPermissions();
             console.log('🔐 LIFF Permissions:', permissions);
             
-            if (!permissions.includes('chat.write') && !permissions.includes('chat_message.write')) {
+            if (!permissions.includes('CHAT_MESSAGE')) {
                 console.warn('❌ No chat write permission');
                 this.handleMissingPermission(order);
                 return false;
