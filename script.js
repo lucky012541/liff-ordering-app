@@ -996,16 +996,27 @@ class OrderingApp {
     }
 
     validatePaymentMethod() {
+        console.log('🔍 Validating payment method...');
         const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
         const paymentMethod = selectedPayment ? selectedPayment.value : 'cash';
+        console.log('💳 Selected payment method:', paymentMethod);
 
         // Cash payment doesn't need validation
         if (paymentMethod === 'cash') {
+            console.log('💵 Cash payment - no validation needed');
             this.paymentVerified = true;
             return true;
         }
 
-        // For transfer and promptpay, check if slip is uploaded
+        // 🔧 DEVELOPMENT MODE: Skip slip validation
+        if (!this.loginRequired) {
+            console.log('🔧 DEVELOPMENT MODE: Skipping slip validation for', paymentMethod);
+            this.paymentVerified = true;
+            this.showToast(`🔧 โหมดพัฒนา: ข้าม${paymentMethod === 'transfer' ? 'สลิปโอนเงิน' : 'สลิป PromptPay'}`, 'info');
+            return true;
+        }
+
+        // For transfer and promptpay, check if slip is uploaded (production only)
         if (paymentMethod === 'transfer') {
             const transferSlip = document.getElementById('transferSlip');
             if (!transferSlip || !transferSlip.files || transferSlip.files.length === 0) {
@@ -1031,6 +1042,7 @@ class OrderingApp {
             return false;
         }
 
+        console.log('✅ Payment method validated successfully');
         return true;
     }
 
@@ -1518,11 +1530,39 @@ class OrderingApp {
                 orderNumber: this.generateOrderNumber()
             };
 
+            console.log('💾 Saving order...', order);
+            
             // Save order locally first
             this.orders.unshift(order);
             this.saveOrders();
 
-            // Send order notification to LINE
+            // 🔧 DEVELOPMENT MODE: Skip LINE message sending
+            if (!this.loginRequired) {
+                console.log('🔧 DEVELOPMENT MODE: Skipping LINE message');
+                
+                // Clear cart and update UI
+                this.cart = [];
+                this.saveCart();
+                this.updateCartUI();
+
+                // Show success message
+                this.showToast('✅ สั่งซื้อสำเร็จ! (โหมดพัฒนา) หมายเลข: ' + order.orderNumber, 'success');
+
+                // Show receipt
+                this.showReceiptStep(order);
+
+                // Reset checkout state
+                this.resetCheckoutState();
+
+                // Track order for status updates
+                this.trackOrderStatus(order.id);
+                
+                console.log('🎉 Order completed successfully in development mode');
+                return;
+            }
+
+            // Send order notification to LINE (production only)
+            console.log('📱 Sending LINE message...');
             const messageSent = await this.sendOrderFlexMessage(order);
 
             if (messageSent) {
