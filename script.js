@@ -1999,29 +1999,29 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
                                     contents: [
                                         {
                                             type: 'text',
-                                            text: `📛 ${(order.customer || order.deliveryInfo || {}).customerName || 'ไม่ระบุ'}`,
+                                            text: `📛 ${order.deliveryInfo.customerName}`,
                                             size: 'sm',
                                             color: '#333333',
                                             margin: 'sm'
                                         },
                                         {
                                             type: 'text',
-                                            text: `📞 ${(order.customer || order.deliveryInfo || {}).customerPhone || 'ไม่ระบุ'}`,
+                                            text: `📞 ${order.deliveryInfo.customerPhone}`,
                                             size: 'sm',
                                             color: '#333333',
                                             margin: 'xs'
                                         },
                                         {
                                             type: 'text',
-                                            text: `🏠 ${(order.customer || order.deliveryInfo || {}).deliveryAddress || 'ไม่ระบุ'}`,
+                                            text: `🏠 ${order.deliveryInfo.deliveryAddress}`,
                                             size: 'sm',
                                             color: '#333333',
                                             margin: 'xs',
                                             wrap: true
                                         },
-                                        ...((order.customer || order.deliveryInfo || {}).deliveryNote ? [{
+                                        ...(order.deliveryInfo.deliveryNote ? [{
                                             type: 'text',
-                                            text: `📝 หมายเหตุ: ${(order.customer || order.deliveryInfo).deliveryNote}`,
+                                            text: `📝 หมายเหตุ: ${order.deliveryInfo.deliveryNote}`,
                                             size: 'sm',
                                             color: '#666666',
                                             margin: 'xs',
@@ -2388,9 +2388,9 @@ ${itemsText}
 
     // Add order status checking functionality
     checkOrderStatus(orderId) {
-        const order = this.orders.find(o => o.id === orderId);
+        const order = this.orders.find(o => o && o.id === orderId);
         if (order) {
-            return order.status;
+            return order.status || 'pending';
         }
         return null;
     }
@@ -2650,52 +2650,63 @@ ${itemsText}
                 </div>
             `;
         } else {
-            ordersList.innerHTML = this.orders.map(order => `
-                <div class="order-item">
-                    <div class="order-header">
-                        <span class="order-id">#${order.id}</span>
-                        <span class="order-date">${order.date}</span>
-                        <span class="order-status ${order.status}">${this.getStatusText(order.status)}</span>
-                    </div>
-                    <div class="order-items">
-                        ${order.items.map(item => `
-                            <div class="order-item-detail">
-                                <span>${item.name} x${item.quantity}</span>
-                                <span>฿${item.price * item.quantity}</span>
+            // Filter valid orders and add safety checks
+            const validOrders = this.orders.filter(order => order && typeof order === 'object');
+            
+            ordersList.innerHTML = validOrders.map(order => {
+                const status = order.status || 'pending';
+                const items = Array.isArray(order.items) ? order.items : [];
+                const orderId = order.id || 'unknown';
+                const date = order.date || 'ไม่ระบุ';
+                const total = order.total || 0;
+                
+                return `
+                    <div class="order-item">
+                        <div class="order-header">
+                            <span class="order-id">#${orderId}</span>
+                            <span class="order-date">${date}</span>
+                            <span class="order-status ${status}">${this.getStatusText(status)}</span>
+                        </div>
+                        <div class="order-items">
+                            ${items.map(item => `
+                                <div class="order-item-detail">
+                                    <span>${item.name || 'สินค้า'} x${item.quantity || 1}</span>
+                                    <span>฿${(item.price || 0) * (item.quantity || 1)}</span>
+                                </div>
+                            `).join('')}
+                            <div class="order-item-detail order-total">
+                                <span>รวมทั้งสิ้น</span>
+                                <span>฿${total}</span>
                             </div>
-                        `).join('')}
-                        <div class="order-item-detail order-total">
-                            <span>รวมทั้งสิ้น</span>
-                            <span>฿${order.total}</span>
+                        </div>
+                        <div class="order-actions">
+                            ${status === 'pending' ? `
+                                <button class="confirm-btn" onclick="app.adminConfirmOrder(${orderId})">
+                                    <i class="fas fa-check"></i> ยืนยัน
+                                </button>
+                                <button class="cancel-btn" onclick="app.updateOrderStatus(${orderId}, 'cancelled')">
+                                    <i class="fas fa-times"></i> ยกเลิก
+                                </button>
+                            ` : ''}
+                            ${status === 'confirmed' ? `
+                                <button class="preparing-btn" onclick="app.updateOrderStatus(${orderId}, 'preparing')">
+                                    <i class="fas fa-clock"></i> กำลังเตรียม
+                                </button>
+                            ` : ''}
+                            ${status === 'preparing' ? `
+                                <button class="ready-btn" onclick="app.updateOrderStatus(${orderId}, 'ready')">
+                                    <i class="fas fa-check-circle"></i> พร้อมรับ
+                                </button>
+                            ` : ''}
+                            ${status === 'ready' ? `
+                                <button class="complete-btn" onclick="app.updateOrderStatus(${orderId}, 'completed')">
+                                    <i class="fas fa-check-double"></i> เสร็จสิ้น
+                                </button>
+                            ` : ''}
                         </div>
                     </div>
-                    <div class="order-actions">
-                        ${order.status === 'pending' ? `
-                            <button class="confirm-btn" onclick="app.adminConfirmOrder(${order.id})">
-                                <i class="fas fa-check"></i> ยืนยัน
-                            </button>
-                            <button class="cancel-btn" onclick="app.updateOrderStatus(${order.id}, 'cancelled')">
-                                <i class="fas fa-times"></i> ยกเลิก
-                            </button>
-                        ` : ''}
-                        ${order.status === 'confirmed' ? `
-                            <button class="preparing-btn" onclick="app.updateOrderStatus(${order.id}, 'preparing')">
-                                <i class="fas fa-clock"></i> กำลังเตรียม
-                            </button>
-                        ` : ''}
-                        ${order.status === 'preparing' ? `
-                            <button class="ready-btn" onclick="app.updateOrderStatus(${order.id}, 'ready')">
-                                <i class="fas fa-check-circle"></i> พร้อมรับ
-                            </button>
-                        ` : ''}
-                        ${order.status === 'ready' ? `
-                            <button class="complete-btn" onclick="app.updateOrderStatus(${order.id}, 'completed')">
-                                <i class="fas fa-check-double"></i> เสร็จสิ้น
-                            </button>
-                        ` : ''}
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
     }
 
@@ -2710,18 +2721,24 @@ ${itemsText}
             return;
         }
 
-        // Filter orders by current user
+        // Filter orders by current user with safety checks
         // ในโหมดพัฒนา (dev_fallback) แสดงทุก order
         const isDevelopment = this.currentUser && this.currentUser.userId && this.currentUser.userId.startsWith('dev_');
         
+        // Filter valid orders first
+        const validOrders = this.orders.filter(order => order && typeof order === 'object');
+        
         const userOrders = isDevelopment 
-            ? this.orders  // Development mode: show all orders
-            : this.orders.filter(order =>
-                !this.currentUser || 
-                order.userId === this.currentUser.userId || 
-                order.userId === 'guest' ||
-                (order.userId && order.userId.startsWith('dev_'))  // Include dev orders for debugging
-            );
+            ? validOrders  // Development mode: show all orders
+            : validOrders.filter(order => {
+                const userId = order.userId || 'guest';
+                const currentUserId = this.currentUser?.userId || null;
+                
+                return !currentUserId || 
+                       userId === currentUserId || 
+                       userId === 'guest' ||
+                       userId.startsWith('dev_');  // Include dev orders for debugging
+            });
         
         console.log('👤 User orders:', userOrders.length);
         console.log('🔧 Development mode:', isDevelopment);
@@ -2738,82 +2755,100 @@ ${itemsText}
                 </div>
             `;
         } else {
-            userOrdersList.innerHTML = userOrders.map(order => `
-                <div class="user-order-card" data-order-id="${order.id}">
-                    <div class="order-card-header">
-                        <div class="order-info">
-                            <h4>คำสั่งซื้อ ${order.orderNumber || '#' + order.id}</h4>
-                            <p class="order-date">${order.date}</p>
+            userOrdersList.innerHTML = userOrders.map(order => {
+                const status = order.status || 'pending';
+                const items = Array.isArray(order.items) ? order.items : [];
+                const orderId = order.id || 'unknown';
+                const orderNumber = order.orderNumber || '#' + orderId;
+                const date = order.date || 'ไม่ระบุ';
+                const total = order.total || 0;
+                
+                return `
+                    <div class="user-order-card" data-order-id="${orderId}">
+                        <div class="order-card-header">
+                            <div class="order-info">
+                                <h4>คำสั่งซื้อ ${orderNumber}</h4>
+                                <p class="order-date">${date}</p>
+                            </div>
+                            <div class="order-status-badge status-${status}">
+                                ${this.getStatusText(status)}
+                            </div>
                         </div>
-                        <div class="order-status-badge status-${order.status}">
-                            ${this.getStatusText(order.status)}
-                        </div>
-                    </div>
 
-                    <div class="order-card-body">
-                        <div class="order-items-summary">
-                            ${order.items.map(item => `
-                                <div class="order-item-summary">
-                                    <span>${item.name} x${item.quantity}</span>
-                                    <span>฿${item.price * item.quantity}</span>
-                                </div>
-                            `).join('')}
+                        <div class="order-card-body">
+                            <div class="order-items-summary">
+                                ${items.map(item => `
+                                    <div class="order-item-summary">
+                                        <span>${item.name || 'สินค้า'} x${item.quantity || 1}</span>
+                                        <span>฿${(item.price || 0) * (item.quantity || 1)}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="order-total-summary">
+                                <span>ยอดรวม</span>
+                                <span>฿${total}</span>
+                            </div>
                         </div>
-                        <div class="order-total-summary">
-                            <span>ยอดรวม</span>
-                            <span>฿${order.total}</span>
-                        </div>
-                    </div>
 
-                    <div class="order-card-actions">
-                        <button class="btn-track" onclick="app.showOrderTracking(${order.id})" style="color: #333; font-size: 14px;">
-                            <i class="fas fa-map-marker-alt"></i> ติดตาม
-                        </button>
-                        <button class="btn-details" onclick="app.showOrderDetails(${order.id})" style="color: #333; font-size: 14px;">
-                            <i class="fas fa-eye"></i> รายละเอียด
-                        </button>
-                        <button class="btn-receipt" onclick="app.printOrderReceipt(${order.id})" style="color: #333; font-size: 14px;">
-                            <i class="fas fa-print"></i> ใบเสร็จ
-                        </button>
+                        <div class="order-card-actions">
+                            <button class="btn-track" onclick="app.showOrderTracking(${orderId})" style="color: #333; font-size: 14px;">
+                                <i class="fas fa-map-marker-alt"></i> ติดตาม
+                            </button>
+                            <button class="btn-details" onclick="app.showOrderDetails(${orderId})" style="color: #333; font-size: 14px;">
+                                <i class="fas fa-eye"></i> รายละเอียด
+                            </button>
+                            <button class="btn-receipt" onclick="app.printOrderReceipt(${orderId})" style="color: #333; font-size: 14px;">
+                                <i class="fas fa-print"></i> ใบเสร็จ
+                            </button>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
     }
 
     showOrderDetails(orderId) {
-        const order = this.orders.find(o => o.id === orderId);
+        const order = this.orders.find(o => o && o.id === orderId);
         if (!order) {
             this.showToast('ไม่พบข้อมูลคำสั่งซื้อ', 'error');
             return;
         }
 
-        const itemsHtml = order.items.map(item => `
+        // Safe access with defaults
+        const items = Array.isArray(order.items) ? order.items : [];
+        const customer = order.customer || {};
+        const status = order.status || 'pending';
+        const paymentMethod = order.paymentMethod || 'cash';
+        const orderNumber = order.orderNumber || '#' + (order.id || 'unknown');
+        const date = order.date || 'ไม่ระบุ';
+        const total = order.total || 0;
+
+        const itemsHtml = items.map(item => `
             <div style="display: flex; justify-content: space-between; margin: 5px 0;">
-                <span>${item.name} x${item.quantity}</span>
-                <span>฿${item.price * item.quantity}</span>
+                <span>${item.name || 'สินค้า'} x${item.quantity || 1}</span>
+                <span>฿${(item.price || 0) * (item.quantity || 1)}</span>
             </div>
         `).join('');
 
         const detailsHtml = `
             <div style="text-align: left;">
-                <h4>📋 รายละเอียดคำสั่งซื้อ ${order.orderNumber || '#' + order.id}</h4>
+                <h4>📋 รายละเอียดคำสั่งซื้อ ${orderNumber}</h4>
                 <div style="margin: 15px 0;">
-                    <strong>วันที่สั่ง:</strong> ${order.date}<br>
-                    <strong>สถานะ:</strong> ${this.getStatusText(order.status)}<br>
-                    <strong>วิธีชำระ:</strong> ${this.getPaymentMethodName()}<br>
-                    <strong>ยอดรวม:</strong> ฿${order.total}
+                    <strong>วันที่สั่ง:</strong> ${date}<br>
+                    <strong>สถานะ:</strong> ${this.getStatusText(status)}<br>
+                    <strong>วิธีชำระ:</strong> ${this.getPaymentMethodName(paymentMethod)}<br>
+                    <strong>ยอดรวม:</strong> ฿${total}
                 </div>
 
                 <h5>🛒 รายการสินค้า</h5>
-                ${itemsHtml}
+                ${itemsHtml || '<p>ไม่มีรายการสินค้า</p>'}
 
                 <h5 style="margin-top: 15px;">👤 ข้อมูลลูกค้า</h5>
                 <div style="margin: 10px 0;">
-                    <strong>ชื่อ:</strong> ${order.customer.customerName}<br>
-                    <strong>เบอร์โทร:</strong> ${order.customer.customerPhone}<br>
-                    <strong>ที่อยู่:</strong> ${order.customer.deliveryAddress}
-                    ${order.customer.deliveryNote ? `<br><strong>หมายเหตุ:</strong> ${order.customer.deliveryNote}` : ''}
+                    <strong>ชื่อ:</strong> ${customer.customerName || 'ไม่ระบุ'}<br>
+                    <strong>เบอร์โทร:</strong> ${customer.customerPhone || 'ไม่ระบุ'}<br>
+                    <strong>ที่อยู่:</strong> ${customer.deliveryAddress || 'ไม่ระบุ'}
+                    ${customer.deliveryNote ? `<br><strong>หมายเหตุ:</strong> ${customer.deliveryNote}` : ''}
                 </div>
             </div>
         `;
