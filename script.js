@@ -1999,29 +1999,29 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
                                     contents: [
                                         {
                                             type: 'text',
-                                            text: `📛 ${order.deliveryInfo.customerName}`,
+                                            text: `📛 ${(order.customer || order.deliveryInfo || {}).customerName || 'ไม่ระบุ'}`,
                                             size: 'sm',
                                             color: '#333333',
                                             margin: 'sm'
                                         },
                                         {
                                             type: 'text',
-                                            text: `📞 ${order.deliveryInfo.customerPhone}`,
+                                            text: `📞 ${(order.customer || order.deliveryInfo || {}).customerPhone || 'ไม่ระบุ'}`,
                                             size: 'sm',
                                             color: '#333333',
                                             margin: 'xs'
                                         },
                                         {
                                             type: 'text',
-                                            text: `🏠 ${order.deliveryInfo.deliveryAddress}`,
+                                            text: `🏠 ${(order.customer || order.deliveryInfo || {}).deliveryAddress || 'ไม่ระบุ'}`,
                                             size: 'sm',
                                             color: '#333333',
                                             margin: 'xs',
                                             wrap: true
                                         },
-                                        ...(order.deliveryInfo.deliveryNote ? [{
+                                        ...((order.customer || order.deliveryInfo || {}).deliveryNote ? [{
                                             type: 'text',
-                                            text: `📝 หมายเหตุ: ${order.deliveryInfo.deliveryNote}`,
+                                            text: `📝 หมายเหตุ: ${(order.customer || order.deliveryInfo).deliveryNote}`,
                                             size: 'sm',
                                             color: '#666666',
                                             margin: 'xs',
