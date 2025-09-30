@@ -18,14 +18,12 @@ class OrderingApp {
         this.orderConfirmed = false;
         
         // Enable login for production use
-        // this.loginRequired = true; // ปิดชั่วคราวเพื่อการพัฒนา
-        this.loginRequired = false;
+        this.loginRequired = true; // เปิดใช้งานระบบล็อกอิน LINE
         
-        // Force disable login for development - override any query parameters
-        console.log('🔧 DEVELOPMENT MODE: Login requirement DISABLED');
+        console.log('🔐 PRODUCTION MODE: LINE Login ENABLED');
         
         // Allow overriding via query string (?forceLogin=1/true/on or 0/false/off)
-        // this.applyLoginToggleFromQuery(); // ปิดไว้ชั่วคราว
+        this.applyLoginToggleFromQuery();
         
         this.init();
     }
