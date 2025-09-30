@@ -34,14 +34,14 @@ class OrderingApp {
             
             // Load sample data
             this.loadSampleData();
-            
+
             // Setup event listeners
             this.setupEventListeners();
-            
+
             // Render initial content
-        this.renderProducts();
-        this.updateCartUI();
-        this.renderOrders();
+            this.renderProducts();
+            this.updateCartUI();
+            this.renderOrders();
         if (document.getElementById('productsManagement')) { 
             this.renderAdminProducts();
         }
@@ -477,8 +477,17 @@ class OrderingApp {
     renderProducts() {
         const productsGrid = document.getElementById('productsGrid');
         if (!productsGrid) {
+            console.warn('Products grid not found, skipping render');
             return;
         }
+
+        // Make sure products are loaded
+        if (!this.products || this.products.length === 0) {
+            console.warn('No products loaded yet');
+            productsGrid.innerHTML = '<div class="loading">กำลังโหลดสินค้า...</div>';
+            return;
+        }
+
         const filteredProducts = this.getFilteredProducts();
 
         if (filteredProducts.length === 0) {
@@ -507,6 +516,8 @@ class OrderingApp {
                 </div>
             </div>
         `).join('');
+
+        console.log(`Rendered ${filteredProducts.length} products`);
     }
 
     getFilteredProducts() {

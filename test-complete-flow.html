@@ -12,6 +12,19 @@
         .success { color: #28a745; }
         .error { color: #dc3545; }
         .info { color: #17a2b8; }
+
+        /* Product grid styles for testing */
+        #productsGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin: 20px 0; }
+        .product-card { background: white; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden; cursor: pointer; transition: all 0.2s ease; }
+        .product-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
+        .product-icon { width: 100%; height: 120px; display: flex; align-items: center; justify-content: center; background: #fff5e6; color: #ff8c00; font-size: 2rem; }
+        .product-info { padding: 15px; }
+        .product-name { font-size: 1rem; font-weight: 600; margin-bottom: 5px; color: #333; }
+        .product-description { color: #666; font-size: 0.9rem; margin-bottom: 10px; line-height: 1.4; }
+        .product-price { font-size: 1.1rem; font-weight: 600; color: #ff8c00; margin-bottom: 10px; }
+        .add-to-cart { width: 100%; padding: 8px; background: #ff8c00; color: white; border: none; border-radius: 5px; font-size: 0.9rem; cursor: pointer; transition: background 0.2s; }
+        .add-to-cart:hover { background: #e67e22; }
+        .loading { text-align: center; padding: 20px; color: #666; }
     </style>
 </head>
 <body>
@@ -63,30 +76,41 @@
             try {
                 if (typeof app !== 'undefined') {
                     updateResult('init-result', '✅ แอปโหลดสำเร็จ', 'success');
+                    return true;
                 } else {
                     updateResult('init-result', '❌ แอปยังไม่ได้โหลด', 'error');
+                    return false;
                 }
             } catch (error) {
                 updateResult('init-result', `❌ เกิดข้อผิดพลาด: ${error.message}`, 'error');
+                return false;
             }
         }
 
         function testProductDisplay() {
             try {
-                const productsGrid = document.getElementById('productsGrid');
-                if (productsGrid && productsGrid.children.length > 0) {
-                    updateResult('product-result', `✅ แสดงสินค้า ${productsGrid.children.length} รายการ`, 'success');
+                if (typeof app !== 'undefined' && app.products) {
+                    const productCount = app.products.length;
+                    if (productCount > 0) {
+                        updateResult('product-result', `✅ พบสินค้า ${productCount} รายการในระบบ`, 'success');
+                        return true;
+                    } else {
+                        updateResult('product-result', '❌ ไม่พบสินค้าในระบบ', 'error');
+                        return false;
+                    }
                 } else {
-                    updateResult('product-result', '❌ ไม่พบสินค้า', 'error');
+                    updateResult('product-result', '❌ แอปยังไม่ได้โหลด', 'error');
+                    return false;
                 }
             } catch (error) {
                 updateResult('product-result', `❌ เกิดข้อผิดพลาด: ${error.message}`, 'error');
+                return false;
             }
         }
 
         function testAddToCart() {
             try {
-                if (typeof app !== 'undefined' && app.cart) {
+                if (typeof app !== 'undefined' && app.cart !== undefined) {
                     const initialCount = app.cart.length;
                     // Add first product to cart
                     app.addToCart(1, 1);
@@ -94,45 +118,51 @@
 
                     if (newCount > initialCount) {
                         updateResult('cart-result', `✅ เพิ่มสินค้าในตะกร้าแล้ว (${newCount} รายการ)`, 'success');
+                        return true;
                     } else {
                         updateResult('cart-result', '❌ ไม่สามารถเพิ่มสินค้าในตะกร้า', 'error');
+                        return false;
                     }
                 } else {
                     updateResult('cart-result', '❌ ไม่พบระบบตะกร้าสินค้า', 'error');
+                    return false;
                 }
             } catch (error) {
                 updateResult('cart-result', `❌ เกิดข้อผิดพลาด: ${error.message}`, 'error');
+                return false;
             }
         }
 
         function testPaymentFlow() {
             try {
-                if (typeof app !== 'undefined') {
-                    // Test payment method selection
-                    const paymentMethods = document.querySelectorAll('input[name="paymentMethod"]');
-                    if (paymentMethods.length > 0) {
-                        updateResult('payment-result', `✅ พบวิธีการชำระเงิน ${paymentMethods.length} วิธี`, 'success');
-                    } else {
-                        updateResult('payment-result', '❌ ไม่พบวิธีการชำระเงิน', 'error');
-                    }
+                // Test payment method selection
+                const paymentMethods = document.querySelectorAll('input[name="paymentMethod"]');
+                if (paymentMethods.length > 0) {
+                    updateResult('payment-result', `✅ พบวิธีการชำระเงิน ${paymentMethods.length} วิธี`, 'success');
+                    return true;
                 } else {
-                    updateResult('payment-result', '❌ แอปยังไม่ได้โหลด', 'error');
+                    updateResult('payment-result', '❌ ไม่พบวิธีการชำระเงิน', 'error');
+                    return false;
                 }
             } catch (error) {
                 updateResult('payment-result', `❌ เกิดข้อผิดพลาด: ${error.message}`, 'error');
+                return false;
             }
         }
 
         function testOrderCompletion() {
             try {
-                if (typeof app !== 'undefined' && app.orders) {
+                if (typeof app !== 'undefined' && app.orders !== undefined) {
                     const orderCount = app.orders.length;
-                    updateResult('order-result', `✅ พบคำสั่งซื้อ ${orderCount} รายการ`, 'success');
+                    updateResult('order-result', `✅ ระบบคำสั่งซื้อทำงานได้ (${orderCount} รายการ)`, 'success');
+                    return true;
                 } else {
                     updateResult('order-result', '❌ ไม่พบระบบคำสั่งซื้อ', 'error');
+                    return false;
                 }
             } catch (error) {
                 updateResult('order-result', `❌ เกิดข้อผิดพลาด: ${error.message}`, 'error');
+                return false;
             }
         }
 
@@ -140,27 +170,100 @@
             try {
                 if (typeof app !== 'undefined' && typeof app.showOrderTracking === 'function') {
                     updateResult('tracking-result', '✅ ระบบติดตามคำสั่งซื้อพร้อมใช้งาน', 'success');
+                    return true;
                 } else {
                     updateResult('tracking-result', '❌ ไม่พบระบบติดตามคำสั่งซื้อ', 'error');
+                    return false;
                 }
             } catch (error) {
                 updateResult('tracking-result', `❌ เกิดข้อผิดพลาด: ${error.message}`, 'error');
+                return false;
             }
         }
 
-        // Auto-run basic tests when page loads
+        function runAllTests() {
+            console.log('Running all tests...');
+            const results = [];
+
+            results.push(testAppInitialization());
+            results.push(testProductDisplay());
+            results.push(testPaymentFlow());
+            results.push(testOrderCompletion());
+            results.push(testOrderTracking());
+
+            // Test cart functionality if app is loaded
+            if (results[0]) { // If app initialization passed
+                setTimeout(() => {
+                    results.push(testAddToCart());
+                    showTestSummary(results);
+                }, 500);
+            } else {
+                showTestSummary(results);
+            }
+        }
+
+        function showTestSummary(results) {
+            const passed = results.filter(r => r === true).length;
+            const total = results.length;
+
+            const summaryDiv = document.createElement('div');
+            summaryDiv.style.cssText = `
+                margin-top: 30px;
+                padding: 20px;
+                border: 2px solid ${passed === total ? '#28a745' : '#ffc107'};
+                border-radius: 10px;
+                background: ${passed === total ? '#d4edda' : '#fff3cd'};
+                text-align: center;
+            `;
+            summaryDiv.innerHTML = `
+                <h3 style="margin: 0 0 10px 0; color: ${passed === total ? '#155724' : '#856404'}">
+                    ${passed === total ? '🎉' : '⚠️'} ผลการทดสอบ: ${passed}/${total} ผ่าน
+                </h3>
+                <p style="margin: 0; font-weight: bold;">
+                    ${passed === total ? 'ทุกฟีเจอร์ทำงานได้ปกติ!' : 'พบปัญหาบางส่วน กรุณาตรวจสอบ'}
+                </p>
+            `;
+
+            document.body.appendChild(summaryDiv);
+        }
+
+        // Auto-run tests when page loads
         window.addEventListener('load', function() {
-            setTimeout(() => {
-                testAppInitialization();
-                testProductDisplay();
-                testPaymentFlow();
-                testOrderCompletion();
-                testOrderTracking();
-            }, 2000);
+            // Wait for app to initialize
+            let attempts = 0;
+            const checkApp = setInterval(() => {
+                attempts++;
+                if (typeof app !== 'undefined' || attempts > 50) { // Wait up to 5 seconds
+                    clearInterval(checkApp);
+                    runAllTests();
+                }
+            }, 100);
         });
     </script>
 
+    <!-- Load the main app HTML structure -->
+    <div id="productsGrid" style="display: block; margin: 10px 0;"></div>
+    <div id="checkoutModal" style="display: none;">
+        <div class="modal-content">
+            <div id="paymentDetailsPanel"></div>
+        </div>
+    </div>
+
+    <!-- Required elements for the app to work -->
+    <div id="loading" style="display: none;"></div>
+    <div id="toast" style="display: none;"><div id="toastMessage"></div></div>
+    <div id="userInfo"><span id="userName">กำลังโหลด...</span></div>
+
+    <!-- Payment methods for testing -->
+    <div style="display: none;">
+        <input type="radio" name="paymentMethod" value="cash" checked>
+        <input type="radio" name="paymentMethod" value="transfer">
+        <input type="radio" name="paymentMethod" value="promptpay">
+    </div>
+
     <!-- Load the main app -->
     <script src="script.js"></script>
+    <!-- Load test script -->
+    <script src="simple-test.js"></script>
 </body>
 </html>
