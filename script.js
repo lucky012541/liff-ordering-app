@@ -790,26 +790,38 @@ class OrderingApp {
     }
 
     nextCheckoutStep() {
+        console.log('🔄 nextCheckoutStep called, current step:', this.checkoutStep);
+        
         if (this.checkoutStep === 1) {
             // Step 1: Cart Review -> Customer Info
+            console.log('🛒 Moving from cart review to customer info');
             this.showCustomerInfoStep();
         } else if (this.checkoutStep === 2) {
             // Step 2: Customer Info -> Payment Method
+            console.log('👤 Validating customer info...');
             if (!this.validateCustomerForm()) {
+                console.log('❌ Customer form validation failed');
                 return;
             }
+            console.log('✅ Customer form validated, moving to payment');
             this.saveCustomerInfo();
             this.showPaymentStep();
         } else if (this.checkoutStep === 3) {
             // Step 3: Payment Method -> Order Summary
+            console.log('💳 Validating payment method...');
             if (!this.validatePaymentMethod()) {
+                console.log('❌ Payment method validation failed');
                 return;
             }
+            console.log('✅ Payment validated, moving to summary');
             this.savePaymentMethod();
             this.showSummaryStep();
         } else if (this.checkoutStep === 4) {
             // Step 4: Order Summary -> Complete Order
+            console.log('📋 Confirming order...');
             this.confirmOrder();
+        } else {
+            console.log('⚠️ Unknown step:', this.checkoutStep);
         }
     }
 
@@ -827,6 +839,7 @@ class OrderingApp {
 
     // Step Functions
     showCartReviewStep() {
+        console.log('📋 Showing cart review step');
         this.checkoutStep = 1;
         this.hideAllSteps();
         
@@ -839,6 +852,7 @@ class OrderingApp {
     }
 
     showCustomerInfoStep() {
+        console.log('👤 Showing customer info step');
         this.checkoutStep = 2;
         this.hideAllSteps();
         
@@ -848,6 +862,12 @@ class OrderingApp {
         this.updateCheckoutButtons();
         this.renderStepper();
     }
+
+    hideAllSteps() {
+        const steps = document.querySelectorAll('.checkout-step');
+        steps.forEach(step => step.classList.remove('active'));
+    }
+
 
     showPaymentStep() {
         this.checkoutStep = 3;
@@ -957,8 +977,18 @@ class OrderingApp {
     }
 
     validateCustomerForm() {
+        console.log('📋 Validating customer form...');
+        
+        // 🔧 DEVELOPMENT MODE: Auto-fill and skip validation
+        if (!this.loginRequired) {
+            console.log('🔧 DEVELOPMENT MODE: Auto-filling customer form');
+            this.autoFillCustomerForm();
+            return true;
+        }
+
         const form = document.getElementById('customerForm');
         if (!form) {
+            console.log('❌ Customer form not found');
             this.showToast('ไม่พบฟอร์มข้อมูล', 'error');
             return false;
         }
@@ -974,6 +1004,7 @@ class OrderingApp {
                     case 'customerPhone': fieldName = 'เบอร์โทรศัพท์'; break;
                     case 'deliveryAddress': fieldName = 'ที่อยู่จัดส่ง'; break;
                 }
+                console.log(`❌ Missing field: ${fieldName}`);
                 this.showToast(`กรุณากรอก${fieldName}`, 'error');
                 if (input) input.focus();
                 return false;
@@ -986,13 +1017,33 @@ class OrderingApp {
             const phone = phoneInput.value;
             const cleanPhone = phone.replace(/\D/g, ''); // Remove all non-digits
             if (cleanPhone.length < 9 || cleanPhone.length > 11) {
+                console.log('❌ Invalid phone number');
                 this.showToast('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (9-11 หลัก)', 'error');
                 phoneInput.focus();
                 return false;
             }
         }
         
+        console.log('✅ Customer form validated successfully');
         return true;
+    }
+
+    autoFillCustomerForm() {
+        const customerName = document.getElementById('customerName');
+        const customerPhone = document.getElementById('customerPhone');
+        const deliveryAddress = document.getElementById('deliveryAddress');
+        
+        if (customerName && !customerName.value) {
+            customerName.value = 'ทดสอบ ลูกค้า';
+        }
+        if (customerPhone && !customerPhone.value) {
+            customerPhone.value = '0812345678';
+        }
+        if (deliveryAddress && !deliveryAddress.value) {
+            deliveryAddress.value = '123 ถนนทดสอบ แขวงทดสอบ เขตทดสอบ กรุงเทพฯ 10110';
+        }
+        
+        console.log('🔧 Auto-filled customer form for development');
     }
 
     validatePaymentMethod() {
