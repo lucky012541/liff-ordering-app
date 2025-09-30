@@ -1506,10 +1506,10 @@ class OrderingApp {
         orderSummary.innerHTML = `
             <div class="summary-section">
                 <h5><i class="fas fa-user"></i> ข้อมูลลูกค้า</h5>
-                <p><strong>ชื่อ:</strong> ${this.deliveryInfo.customerName}</p>
-                <p><strong>เบอร์โทร:</strong> ${this.deliveryInfo.customerPhone}</p>
-                <p><strong>ที่อยู่:</strong> ${this.deliveryInfo.deliveryAddress}</p>
-                ${this.deliveryInfo.deliveryNote ? `<p><strong>หมายเหตุ:</strong> ${this.deliveryInfo.deliveryNote}</p>` : ''}
+                <p><strong>ชื่อ:</strong> ${this.customerInfo.customerName || 'ไม่ระบุ'}</p>
+                <p><strong>เบอร์โทร:</strong> ${this.customerInfo.customerPhone || 'ไม่ระบุ'}</p>
+                <p><strong>ที่อยู่:</strong> ${this.customerInfo.deliveryAddress || 'ไม่ระบุ'}</p>
+                ${this.customerInfo.deliveryNote ? `<p><strong>หมายเหตุ:</strong> ${this.customerInfo.deliveryNote}</p>` : ''}
             </div>
             
             <div class="summary-section">
@@ -1617,30 +1617,38 @@ class OrderingApp {
 
             // Send order notification to LINE (production only)
             console.log('📱 Sending LINE message...');
-            const messageSent = await this.sendOrderFlexMessage(order);
+            let messageSent = false;
+            
+            try {
+                messageSent = await this.sendOrderFlexMessage(order);
+            } catch (error) {
+                console.error('❌ Failed to send LINE message:', error);
+                messageSent = false;
+            }
+
+            // Clear cart and update UI (regardless of message status)
+            this.cart = [];
+            this.saveCart();
+            this.updateCartUI();
 
             if (messageSent) {
-                // Clear cart and update UI
-                this.cart = [];
-                this.saveCart();
-                this.updateCartUI();
-
                 // Show success message
                 this.showToast('✅ สั่งซื้อสำเร็จ! หมายเลขคำสั่งซื้อ: ' + order.orderNumber, 'success');
-
-                // Show receipt
-                this.showReceiptStep(order);
-
-                // Reset checkout state
-                this.resetCheckoutState();
-
-                // Track order for status updates
-                this.trackOrderStatus(order.id);
             } else {
                 // If LINE message failed, still show receipt but warn user
-                this.showToast('⚠️ สั่งซื้อสำเร็จ แต่ไม่สามารถส่งแจ้งเตือนได้', 'warning');
-                this.showReceiptStep(order);
+                this.showToast('✅ สั่งซื้อสำเร็จ! (ไม่ส่งแจ้งเตือน LINE) หมายเลข: ' + order.orderNumber, 'success');
             }
+
+            // Show receipt
+            this.showReceiptStep(order);
+
+            // Reset checkout state
+            this.resetCheckoutState();
+
+            // Track order for status updates
+            this.trackOrderStatus(order.id);
+            
+            console.log('🎉 Order process completed');
 
         } catch (error) {
             console.error('Order confirmation error:', error);
