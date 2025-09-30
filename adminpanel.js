@@ -137,13 +137,53 @@ class AdminPanel {
         this.switchTab('orders');
     }
 
-    loadOrders() {
+    async loadOrders() {
+        console.log('📦 Loading orders from all sources...');
+        
+        // 1. Load from LocalStorage
         const savedOrders = localStorage.getItem('liff_orders');
         if (savedOrders) {
             this.orders = JSON.parse(savedOrders);
+            console.log('✅ Loaded from LocalStorage:', this.orders.length, 'orders');
         } else {
             this.orders = [];
         }
+        
+        // 2. Try to load from GitHub Issues (if configured)
+        if (window.githubStorage && window.githubStorage.isConfigured()) {
+            console.log('📤 Fetching from GitHub Issues...');
+            try {
+                const githubOrders = await window.githubStorage.getAllOrders();
+                if (githubOrders && githubOrders.length > 0) {
+                    console.log('✅ Fetched from GitHub:', githubOrders.length, 'orders');
+                    
+                    // Merge with LocalStorage orders (deduplicate by ID)
+                    const orderMap = new Map();
+                    
+                    // Add LocalStorage orders first
+                    this.orders.forEach(order => orderMap.set(order.id, order));
+                    
+                    // Add/Update with GitHub orders
+                    githubOrders.forEach(order => {
+                        if (!orderMap.has(order.id)) {
+                            orderMap.set(order.id, order);
+                        }
+                    });
+                    
+                    this.orders = Array.from(orderMap.values());
+                    console.log('✅ Merged total:', this.orders.length, 'orders');
+                } else {
+                    console.log('ℹ️ No orders in GitHub');
+                }
+            } catch (error) {
+                console.error('❌ Error fetching from GitHub:', error);
+            }
+        } else {
+            console.log('ℹ️ GitHub Storage not configured');
+        }
+        
+        // Sort by date (newest first)
+        this.orders.sort((a, b) => b.id - a.id);
     }
 
     loadProducts() {
@@ -248,7 +288,7 @@ class AdminPanel {
         }
 
         // Sort by date (newest first)
-        filteredOrders.sort((a, b) => new Date(b.date) - new Date(a.date));
+        filteredOrders.sort((a, b) => b.id - a.id);
 
         if (filteredOrders.length === 0) {
             adminOrdersList.innerHTML = `
@@ -261,7 +301,132 @@ class AdminPanel {
             return;
         }
 
-        adminOrdersList.innerHTML = filteredOrders.map(order => `
+        // 📊 แบ่งหมวดหมู่
+        const categorized = this.categorizeOrders(filteredOrders);
+        
+        // แสดงสถิติ
+        const statsHTML = this.renderOrderStats(categorized);
+        
+        // แสดงแต่ละหมวดหมู่
+        const groupedHTML = this.renderGroupedOrders(categorized, filteredOrders);
+        
+        adminOrdersList.innerHTML = statsHTML + groupedHTML;
+    }
+
+    categorizeOrders(orders) {
+        return {
+            pending: orders.filter(o => o.status === 'pending' || o.status === 'pending_payment'),
+            confirmed: orders.filter(o => o.status === 'confirmed'),
+            processing: orders.filter(o => o.status === 'processing'),
+            completed: orders.filter(o => o.status === 'completed'),
+            cancelled: orders.filter(o => o.status === 'cancelled'),
+            cash: orders.filter(o => o.paymentMethod === 'cash'),
+            transfer: orders.filter(o => o.paymentMethod === 'transfer'),
+            promptpay: orders.filter(o => o.paymentMethod === 'promptpay'),
+            withSlip: orders.filter(o => o.paymentMeta?.slipDataUrl),
+            withoutSlip: orders.filter(o => !o.paymentMeta?.slipDataUrl && o.paymentMethod !== 'cash')
+        };
+    }
+
+    renderOrderStats(categorized) {
+        return `
+            <div class="order-stats-dashboard">
+                <div class="stats-grid">
+                    <div class="stat-card pending">
+                        <i class="fas fa-clock"></i>
+                        <div class="stat-info">
+                            <h4>${categorized.pending.length}</h4>
+                            <p>รอตรวจสอบ</p>
+                        </div>
+                    </div>
+                    <div class="stat-card confirmed">
+                        <i class="fas fa-check-circle"></i>
+                        <div class="stat-info">
+                            <h4>${categorized.confirmed.length}</h4>
+                            <p>ยืนยันแล้ว</p>
+                        </div>
+                    </div>
+                    <div class="stat-card completed">
+                        <i class="fas fa-check-double"></i>
+                        <div class="stat-info">
+                            <h4>${categorized.completed.length}</h4>
+                            <p>เสร็จสิ้น</p>
+                        </div>
+                    </div>
+                    <div class="stat-card cancelled">
+                        <i class="fas fa-times-circle"></i>
+                        <div class="stat-info">
+                            <h4>${categorized.cancelled.length}</h4>
+                            <p>ยกเลิก</p>
+                        </div>
+                    </div>
+                    <div class="stat-card cash">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <div class="stat-info">
+                            <h4>${categorized.cash.length}</h4>
+                            <p>เงินสด</p>
+                        </div>
+                    </div>
+                    <div class="stat-card transfer">
+                        <i class="fas fa-university"></i>
+                        <div class="stat-info">
+                            <h4>${categorized.transfer.length}</h4>
+                            <p>โอนเงิน</p>
+                        </div>
+                    </div>
+                    <div class="stat-card slip">
+                        <i class="fas fa-receipt"></i>
+                        <div class="stat-info">
+                            <h4>${categorized.withSlip.length}</h4>
+                            <p>มีสลิป</p>
+                        </div>
+                    </div>
+                    <div class="stat-card no-slip">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div class="stat-info">
+                            <h4>${categorized.withoutSlip.length}</h4>
+                            <p>ยังไม่มีสลิป</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderGroupedOrders(categorized, allOrders) {
+        let html = '';
+        
+        // แสดงแต่ละกลุ่มตามสถานะ
+        const groups = [
+            { key: 'pending', title: '⏳ รอตรวจสอบ', icon: 'clock', color: 'orange' },
+            { key: 'confirmed', title: '✅ ยืนยันแล้ว', icon: 'check-circle', color: 'green' },
+            { key: 'processing', title: '🔄 กำลังดำเนินการ', icon: 'spinner', color: 'blue' },
+            { key: 'completed', title: '✨ เสร็จสิ้น', icon: 'check-double', color: 'success' },
+            { key: 'cancelled', title: '❌ ยกเลิก', icon: 'times-circle', color: 'red' }
+        ];
+        
+        groups.forEach(group => {
+            const orders = categorized[group.key];
+            if (orders.length > 0) {
+                html += `
+                    <div class="order-group">
+                        <h3 class="group-header">
+                            <i class="fas fa-${group.icon}"></i>
+                            ${group.title} (${orders.length})
+                        </h3>
+                        <div class="group-orders">
+                            ${orders.map(order => this.renderOrderCard(order)).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        
+        return html;
+    }
+
+    renderOrderCard(order) {
+        return `
             <div class="admin-order-card" data-order-id="${order.id}">
                 <div class="order-header">
                     <div class="order-info">
@@ -314,7 +479,7 @@ class AdminPanel {
                     </button>
                 </div>
             </div>
-        `).join('');
+        `;
     }
 
     renderPaymentSlip(order) {
