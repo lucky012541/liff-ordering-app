@@ -378,27 +378,28 @@ class OrderingApp {
             closeCheckoutModalBtn.addEventListener('click', () => this.closeCheckoutModal());
         }
 
-        const nextBtn = document.getElementById('nextBtn');
-        if (nextBtn) {
-            console.log('Next button found, adding event listener');
-            nextBtn.addEventListener('click', (e) => {
+        // Use event delegation for next button to handle dynamic content
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'nextBtn' || e.target.closest('#nextBtn')) {
                 e.preventDefault();
-                console.log('Next button clicked');
+                console.log('Next button clicked via delegation');
                 this.nextCheckoutStep();
-            });
-        } else {
-            console.log('Next button not found');
-        }
+            }
+        });
 
-        const prevBtn = document.getElementById('prevBtn');
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => this.prevCheckoutStep());
-        }
-
-        const confirmOrderBtn = document.getElementById('confirmOrderBtn');
-        if (confirmOrderBtn) {
-            confirmOrderBtn.addEventListener('click', () => this.confirmOrder());
-        }
+        // Use event delegation for prev and confirm buttons too
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'prevBtn' || e.target.closest('#prevBtn')) {
+                e.preventDefault();
+                console.log('Previous button clicked via delegation');
+                this.prevCheckoutStep();
+            }
+            if (e.target.id === 'confirmOrderBtn' || e.target.closest('#confirmOrderBtn')) {
+                e.preventDefault();
+                console.log('Confirm order button clicked via delegation');
+                this.confirmOrder();
+            }
+        });
 
         // Payment method change -> update details panel
         const paymentRadios = document.querySelectorAll('input[name="paymentMethod"]');
