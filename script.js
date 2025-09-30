@@ -1593,10 +1593,15 @@ class OrderingApp {
             };
 
             console.log('💾 Saving order...', order);
+            console.log('📦 Orders before save:', this.orders.length);
             
             // Save order locally first
             this.orders.unshift(order);
             this.saveOrders();
+            
+            console.log('📦 Orders after save:', this.orders.length);
+            console.log('✅ Order saved with ID:', order.id);
+            console.log('👤 Order userId:', order.userId);
 
             // 🔧 DEVELOPMENT MODE: Skip LINE message sending
             if (!this.loginRequired) {
@@ -1618,6 +1623,9 @@ class OrderingApp {
 
                 // Track order for status updates
                 this.trackOrderStatus(order.id);
+                
+                // Render user orders to update the list
+                this.renderUserOrders();
                 
                 console.log('🎉 Order completed successfully in development mode');
                 return;
@@ -1655,6 +1663,9 @@ class OrderingApp {
 
             // Track order for status updates
             this.trackOrderStatus(order.id);
+            
+            // Render user orders to update the list
+            this.renderUserOrders();
             
             console.log('🎉 Order process completed');
 
