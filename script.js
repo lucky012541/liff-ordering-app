@@ -866,6 +866,11 @@ class OrderingApp {
         const customerInfoStep = document.getElementById('customerInfoStep');
         if (customerInfoStep) customerInfoStep.classList.add('active');
         
+        // 📂 โหลดข้อมูลลูกค้าที่บันทึกไว้ (ถ้ามี)
+        setTimeout(() => {
+            this.loadSavedCustomerInfo();
+        }, 100); // รอให้ DOM พร้อมก่อน
+        
         this.updateCheckoutButtons();
         this.renderStepper();
     }
@@ -1291,6 +1296,87 @@ class OrderingApp {
             deliveryAddress: formData.get('deliveryAddress') || '',
             deliveryNote: formData.get('deliveryNote') || ''
         };
+
+        // 💾 บันทึกข้อมูลลูกค้าลง localStorage เพื่อใช้ครั้งถัดไป
+        try {
+            localStorage.setItem('customer_info', JSON.stringify(this.customerInfo));
+            console.log('✅ Customer info saved to localStorage');
+        } catch (error) {
+            console.warn('⚠️ Failed to save customer info to localStorage:', error);
+        }
+    }
+
+    loadSavedCustomerInfo() {
+        try {
+            const savedCustomerInfo = localStorage.getItem('customer_info');
+            if (savedCustomerInfo) {
+                const customerInfo = JSON.parse(savedCustomerInfo);
+                console.log('📂 Loading saved customer info:', customerInfo);
+
+                // เติมข้อมูลในฟอร์ม
+                const customerNameInput = document.getElementById('customerName');
+                const customerPhoneInput = document.getElementById('customerPhone');
+                const deliveryAddressInput = document.getElementById('deliveryAddress');
+                const deliveryNoteInput = document.getElementById('deliveryNote');
+
+                if (customerNameInput && customerInfo.customerName) {
+                    customerNameInput.value = customerInfo.customerName;
+                }
+                if (customerPhoneInput && customerInfo.customerPhone) {
+                    customerPhoneInput.value = customerInfo.customerPhone;
+                }
+                if (deliveryAddressInput && customerInfo.deliveryAddress) {
+                    deliveryAddressInput.value = customerInfo.deliveryAddress;
+                }
+                if (deliveryNoteInput && customerInfo.deliveryNote) {
+                    deliveryNoteInput.value = customerInfo.deliveryNote;
+                }
+
+                // อัพเดต this.customerInfo ด้วย
+                this.customerInfo = { ...customerInfo };
+                
+                console.log('✅ Customer info loaded successfully');
+                this.showToast('📂 โหลดข้อมูลเดิมแล้ว (สามารถแก้ไขได้)', 'success');
+            } else {
+                console.log('ℹ️ No saved customer info found');
+                
+                // ใช้ข้อมูลจาก LINE Profile ถ้ามี
+                if (this.currentUser && this.currentUser.displayName) {
+                    const customerNameInput = document.getElementById('customerName');
+                    if (customerNameInput && !customerNameInput.value) {
+                        customerNameInput.value = this.currentUser.displayName;
+                        this.showToast('📱 ใช้ชื่อจาก LINE Profile', 'info');
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn('⚠️ Failed to load customer info from localStorage:', error);
+        }
+    }
+
+    clearSavedCustomerInfo() {
+        try {
+            localStorage.removeItem('customer_info');
+            
+            // เคลียร์ฟอร์ม
+            const customerNameInput = document.getElementById('customerName');
+            const customerPhoneInput = document.getElementById('customerPhone');
+            const deliveryAddressInput = document.getElementById('deliveryAddress');
+            const deliveryNoteInput = document.getElementById('deliveryNote');
+
+            if (customerNameInput) customerNameInput.value = '';
+            if (customerPhoneInput) customerPhoneInput.value = '';
+            if (deliveryAddressInput) deliveryAddressInput.value = '';
+            if (deliveryNoteInput) deliveryNoteInput.value = '';
+
+            // เคลียร์ในหน่วยความจำ
+            this.customerInfo = {};
+            
+            console.log('🗑️ Customer info cleared');
+            this.showToast('🗑️ ข้อมูลเก่าถูกลบแล้ว', 'success');
+        } catch (error) {
+            console.warn('⚠️ Failed to clear customer info:', error);
+        }
     }
 
     savePaymentMethod() {
