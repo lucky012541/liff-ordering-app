@@ -1,12 +1,16 @@
 class AdminPanel {
     constructor() {
         this.orders = [];
+        this.products = [];
         this.isLoggedIn = false;
+        this.editingProductId = null;
+        this.currentTab = 'orders';
         this.init();
     }
 
     init() {
         this.loadOrders();
+        this.loadProducts();
         this.setupEventListeners();
         this.checkLoginStatus();
     }
@@ -29,6 +33,14 @@ class AdminPanel {
             });
         }
 
+        // Tab switching
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const targetTab = e.currentTarget.dataset.tab;
+                this.switchTab(targetTab);
+            });
+        });
+
         // Filters
         const orderStatusFilter = document.getElementById('orderStatusFilter');
         const paymentMethodFilter = document.getElementById('paymentMethodFilter');
@@ -44,6 +56,40 @@ class AdminPanel {
             refreshOrders.addEventListener('click', () => {
                 this.loadOrders();
                 this.renderAdminOrders();
+            });
+        }
+
+        // Product Management
+        const addProductBtn = document.getElementById('addProductBtn');
+        if (addProductBtn) {
+            addProductBtn.addEventListener('click', () => this.openProductModal());
+        }
+
+        const closeProductModal = document.getElementById('closeProductModal');
+        if (closeProductModal) {
+            closeProductModal.addEventListener('click', () => this.closeProductModal());
+        }
+
+        const cancelProductBtn = document.getElementById('cancelProductBtn');
+        if (cancelProductBtn) {
+            cancelProductBtn.addEventListener('click', () => this.closeProductModal());
+        }
+
+        const productForm = document.getElementById('productForm');
+        if (productForm) {
+            productForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.saveProduct();
+            });
+        }
+
+        // Close modal when clicking outside
+        const productModal = document.getElementById('productModal');
+        if (productModal) {
+            productModal.addEventListener('click', (e) => {
+                if (e.target.id === 'productModal') {
+                    this.closeProductModal();
+                }
             });
         }
     }
@@ -88,7 +134,7 @@ class AdminPanel {
     showAdminPanel() {
         document.getElementById('loginSection').style.display = 'none';
         document.getElementById('adminPanel').style.display = 'block';
-        this.renderAdminOrders();
+        this.switchTab('orders');
     }
 
     loadOrders() {
@@ -98,6 +144,88 @@ class AdminPanel {
         } else {
             this.orders = [];
         }
+    }
+
+    loadProducts() {
+        // Load from localStorage or use sample data from main app
+        const savedProducts = localStorage.getItem('liff_products');
+        if (savedProducts) {
+            this.products = JSON.parse(savedProducts);
+        } else {
+            // Initialize with default products
+            this.products = [
+                {
+                    id: 1,
+                    name: 'น้ำแข็ง เล็ก',
+                    description: 'น้ำแข็งก้อนเล็ก เหมาะสำหรับเครื่องดื่มเย็น',
+                    price: 40,
+                    icon: 'fas fa-snowflake',
+                    category: 'ice',
+                    stock: 100
+                },
+                {
+                    id: 2,
+                    name: 'น้ำแข็งใหญ่',
+                    description: 'น้ำแข็งก้อนใหญ่ เหมาะสำหรับเก็บอาหารและเครื่องดื่ม',
+                    price: 40,
+                    icon: 'fas fa-cube',
+                    category: 'ice',
+                    stock: 80
+                },
+                {
+                    id: 3,
+                    name: 'น้ำแข็งบด',
+                    description: 'น้ำแข็งบดละเอียด เหมาะสำหรับเครื่องดื่มเย็น',
+                    price: 40,
+                    icon: 'fas fa-icicles',
+                    category: 'ice',
+                    stock: 120
+                },
+                {
+                    id: 4,
+                    name: 'น้ำดื่ม 1 ลิตร',
+                    description: 'น้ำดื่มสะอาด บรรจุขวด 1 ลิตร',
+                    price: 15,
+                    icon: 'fas fa-tint',
+                    category: 'water',
+                    stock: 200
+                },
+                {
+                    id: 5,
+                    name: 'น้ำดื่ม 500 มล.',
+                    description: 'น้ำดื่มสะอาด บรรจุขวด 500 มิลลิลิตร',
+                    price: 10,
+                    icon: 'fas fa-wine-bottle',
+                    category: 'water',
+                    stock: 300
+                },
+                {
+                    id: 6,
+                    name: 'แก๊สหุงต้ม 15 กก.',
+                    description: 'แก๊สหุงต้มถัง 15 กิโลกรัม สำหรับครัวเรือน',
+                    price: 350,
+                    icon: 'fas fa-fire',
+                    category: 'gas',
+                    stock: 50
+                },
+                {
+                    id: 7,
+                    name: 'แก๊สหุงต้ม 12 กก.',
+                    description: 'แก๊สหุงต้มถัง 12 กิโลกรัม ขนาดเล็ก',
+                    price: 280,
+                    icon: 'fas fa-fire-flame-simple',
+                    category: 'gas',
+                    stock: 30
+                }
+            ];
+            this.saveProducts();
+        }
+    }
+
+    saveProducts() {
+        localStorage.setItem('liff_products', JSON.stringify(this.products));
+        // Also update the main app's localStorage
+        window.dispatchEvent(new CustomEvent('productsUpdated', { detail: this.products }));
     }
 
     renderAdminOrders() {
@@ -358,6 +486,229 @@ class AdminPanel {
         setTimeout(() => {
             toast.remove();
         }, 3000);
+    }
+
+    // Tab Switching
+    switchTab(tabName) {
+        // Remove active class from all tabs
+        document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+        // Add active class to selected tab
+        const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
+        if (activeTab) {
+            activeTab.classList.add('active');
+        }
+
+        // Show corresponding content
+        const contentMap = {
+            'orders': 'ordersTab',
+            'products': 'productsTab',
+            'stats': 'stats',
+            'github': 'github'
+        };
+
+        const contentId = contentMap[tabName];
+        const activeContent = document.getElementById(contentId);
+        if (activeContent) {
+            activeContent.classList.add('active');
+        }
+
+        this.currentTab = tabName;
+
+        // Load content based on tab
+        if (tabName === 'orders') {
+            this.renderAdminOrders();
+        } else if (tabName === 'products') {
+            this.renderProducts();
+        } else if (tabName === 'stats') {
+            this.updateStats();
+        }
+    }
+
+    // Product Management Functions
+    renderProducts() {
+        const productsManagement = document.getElementById('productsManagement');
+        if (!productsManagement) return;
+
+        if (this.products.length === 0) {
+            productsManagement.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-box-open"></i>
+                    <h3>ไม่มีสินค้า</h3>
+                    <p>เริ่มต้นโดยการเพิ่มสินค้าใหม่</p>
+                </div>
+            `;
+            return;
+        }
+
+        productsManagement.innerHTML = this.products.map(product => `
+            <div class="product-manage-card">
+                <div class="product-manage-icon">
+                    <i class="${product.icon}"></i>
+                </div>
+                <div class="product-manage-info">
+                    <h4>${product.name}</h4>
+                    <p>${product.description}</p>
+                </div>
+                <div class="product-manage-details">
+                    <div class="product-detail-row">
+                        <span class="product-detail-label">ราคา:</span>
+                        <span class="product-detail-value product-price">฿${product.price}</span>
+                    </div>
+                    <div class="product-detail-row">
+                        <span class="product-detail-label">สต็อก:</span>
+                        <span class="product-detail-value ${this.getStockClass(product.stock)}">${product.stock} ชิ้น</span>
+                    </div>
+                    <div class="product-detail-row">
+                        <span class="product-detail-label">หมวดหมู่:</span>
+                        <span class="category-badge category-${product.category}">${this.getCategoryName(product.category)}</span>
+                    </div>
+                </div>
+                <div class="product-manage-actions">
+                    <button class="btn btn-warning" onclick="adminPanel.editProduct(${product.id})">
+                        <i class="fas fa-edit"></i> แก้ไข
+                    </button>
+                    <button class="btn btn-danger" onclick="adminPanel.deleteProduct(${product.id})">
+                        <i class="fas fa-trash"></i> ลบ
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    getStockClass(stock) {
+        if (stock < 20) return 'stock-low';
+        if (stock < 50) return 'stock-medium';
+        return 'stock-high';
+    }
+
+    getCategoryName(category) {
+        const names = {
+            'ice': 'น้ำแข็ง',
+            'water': 'น้ำดื่ม',
+            'gas': 'แก๊ส',
+            'other': 'อื่นๆ'
+        };
+        return names[category] || category;
+    }
+
+    openProductModal(productId = null) {
+        const modal = document.getElementById('productModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const form = document.getElementById('productForm');
+        
+        if (!modal || !modalTitle || !form) return;
+
+        // Reset form
+        form.reset();
+        this.editingProductId = null;
+
+        if (productId) {
+            // Edit mode
+            const product = this.products.find(p => p.id === productId);
+            if (product) {
+                modalTitle.textContent = 'แก้ไขสินค้า';
+                document.getElementById('productName').value = product.name;
+                document.getElementById('productDescription').value = product.description;
+                document.getElementById('productPrice').value = product.price;
+                document.getElementById('productStock').value = product.stock;
+                document.getElementById('productCategory').value = product.category;
+                document.getElementById('productIcon').value = product.icon;
+                this.editingProductId = productId;
+            }
+        } else {
+            // Add mode
+            modalTitle.textContent = 'เพิ่มสินค้าใหม่';
+        }
+
+        modal.style.display = 'block';
+    }
+
+    closeProductModal() {
+        const modal = document.getElementById('productModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+        this.editingProductId = null;
+    }
+
+    saveProduct() {
+        const name = document.getElementById('productName').value;
+        const description = document.getElementById('productDescription').value;
+        const price = parseFloat(document.getElementById('productPrice').value);
+        const stock = parseInt(document.getElementById('productStock').value);
+        const category = document.getElementById('productCategory').value;
+        const icon = document.getElementById('productIcon').value || 'fas fa-box';
+
+        if (this.editingProductId) {
+            // Update existing product
+            const index = this.products.findIndex(p => p.id === this.editingProductId);
+            if (index !== -1) {
+                this.products[index] = {
+                    ...this.products[index],
+                    name,
+                    description,
+                    price,
+                    stock,
+                    category,
+                    icon
+                };
+                this.showToast('อัปเดตสินค้าสำเร็จ', 'success');
+            }
+        } else {
+            // Add new product
+            const newId = this.products.length > 0 ? Math.max(...this.products.map(p => p.id)) + 1 : 1;
+            this.products.push({
+                id: newId,
+                name,
+                description,
+                price,
+                stock,
+                category,
+                icon
+            });
+            this.showToast('เพิ่มสินค้าใหม่สำเร็จ', 'success');
+        }
+
+        this.saveProducts();
+        this.renderProducts();
+        this.closeProductModal();
+    }
+
+    editProduct(productId) {
+        this.openProductModal(productId);
+    }
+
+    deleteProduct(productId) {
+        const product = this.products.find(p => p.id === productId);
+        if (!product) return;
+
+        if (confirm(`คุณต้องการลบสินค้า "${product.name}" ใช่หรือไม่?`)) {
+            this.products = this.products.filter(p => p.id !== productId);
+            this.saveProducts();
+            this.renderProducts();
+            this.showToast('ลบสินค้าสำเร็จ', 'success');
+        }
+    }
+
+    updateStats() {
+        // Calculate statistics
+        const totalOrders = this.orders.length;
+        const totalRevenue = this.orders.reduce((sum, order) => sum + order.total, 0);
+        const pendingOrders = this.orders.filter(o => o.status === 'pending').length;
+        const completedOrders = this.orders.filter(o => o.status === 'completed').length;
+
+        // Update UI
+        const totalOrdersEl = document.getElementById('totalOrders');
+        const totalRevenueEl = document.getElementById('totalRevenue');
+        const pendingOrdersEl = document.getElementById('pendingOrders');
+        const completedOrdersEl = document.getElementById('completedOrders');
+
+        if (totalOrdersEl) totalOrdersEl.textContent = totalOrders;
+        if (totalRevenueEl) totalRevenueEl.textContent = `฿${totalRevenue.toLocaleString()}`;
+        if (pendingOrdersEl) pendingOrdersEl.textContent = pendingOrders;
+        if (completedOrdersEl) completedOrdersEl.textContent = completedOrders;
     }
 }
 
