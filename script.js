@@ -1614,13 +1614,33 @@ class OrderingApp {
             console.log('💾 Saving order...', order);
             console.log('📦 Orders before save:', this.orders.length);
             
-            // Save order locally first
+            // Save order locally first (LocalStorage)
             this.orders.unshift(order);
             this.saveOrders();
             
             console.log('📦 Orders after save:', this.orders.length);
             console.log('✅ Order saved with ID:', order.id);
             console.log('👤 Order userId:', order.userId);
+            
+            // 💾 Save to GitHub Issues (Database)
+            if (window.githubStorage && window.githubStorage.isConfigured()) {
+                console.log('📤 Saving to GitHub Issues database...');
+                try {
+                    const githubResult = await window.githubStorage.createOrder(order);
+                    if (githubResult && githubResult.issueNumber) {
+                        console.log('✅ บันทึกลง GitHub สำเร็จ! Issue #' + githubResult.issueNumber);
+                        order.githubIssueNumber = githubResult.issueNumber;
+                        this.saveOrders(); // Update with issue number
+                    } else {
+                        console.warn('⚠️ GitHub save returned no issue number');
+                    }
+                } catch (githubError) {
+                    console.error('❌ GitHub Storage Error:', githubError);
+                    // Don't block order - continue anyway
+                }
+            } else {
+                console.warn('⚠️ GitHub Storage ไม่ได้ตั้งค่า - เก็บใน LocalStorage เท่านั้น');
+            }
 
             // 🔧 DEVELOPMENT MODE: Skip LINE message sending
             if (!this.loginRequired) {
