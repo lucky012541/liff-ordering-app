@@ -18,7 +18,8 @@ class OrderingApp {
         this.orderConfirmed = false;
         
         // Enable login for production use
-        this.loginRequired = true;
+        // this.loginRequired = true; // ปิดชั่วคราวเพื่อการพัฒนา
+        this.loginRequired = false;
         // Allow overriding via query string (?forceLogin=1/true/on or 0/false/off)
         this.applyLoginToggleFromQuery();
         
