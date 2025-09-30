@@ -61,6 +61,20 @@ class OrderingApp {
 
     async initializeLIFF() {
         return new Promise((resolve, reject) => {
+            // 🔧 DEVELOPMENT MODE: Skip LIFF entirely
+            if (!this.loginRequired) {
+                console.log('🔧 DEVELOPMENT MODE: Skipping LIFF initialization completely');
+                this.currentUser = {
+                    displayName: 'โหมดพัฒนา',
+                    userId: 'dev_fallback_' + Date.now(),
+                    pictureUrl: 'https://via.placeholder.com/50'
+                };
+                this.updateUserInfo();
+                this.showToast('🔧 โหมดพัฒนา: ไม่ต้องล็อกอิน LINE', 'info');
+                resolve();
+                return;
+            }
+
             // Check if running in LINE app
             const isInLineApp = navigator.userAgent.includes('Line') || window.location.search.includes('liff');
 
@@ -70,17 +84,18 @@ class OrderingApp {
                     this.showToast('ไม่สามารถโหลด LINE LIFF ได้ กรุณาลองใหม่', 'error');
                     reject(new Error('LIFF SDK not available'));
                     return;
+                } else {
+                    // Not in LINE app, use mock data for development
+                    this.currentUser = {
+                        displayName: 'โหมดพัฒนา (No LIFF)',
+                        userId: 'dev_no_liff_' + Date.now(),
+                        pictureUrl: 'https://via.placeholder.com/50'
+                    };
+                    this.updateUserInfo();
+                    this.showToast('โหมดพัฒนา: ไม่มี LIFF SDK', 'info');
+                    resolve();
+                    return;
                 }
-                // Not in LINE app, use mock data for development
-                this.currentUser = {
-                    displayName: 'ผู้ใช้ทดสอบ',
-                    userId: 'test_user_' + Date.now(),
-                    pictureUrl: 'https://via.placeholder.com/50'
-                };
-                this.updateUserInfo();
-                this.showToast('โหมดพัฒนา: ใช้งานแบบไม่ต้องล็อกอิน', 'info');
-                resolve();
-                return;
             }
 
             // Initialize LIFF with proper error handling
@@ -88,8 +103,6 @@ class OrderingApp {
                 liffId: '2006986568-yjrOkKqm',
                 withLoginOnExternalBrowser: true
             }).then(() => {
-                console.log('LIFF initialized successfully');
-
                 if (liff.isLoggedIn()) {
                     return liff.getProfile();
                 } else {
@@ -100,15 +113,8 @@ class OrderingApp {
                         });
                         return; // Will not resolve here
                     } else {
-                        // Development mode: use mock user
-                        this.currentUser = {
-                            displayName: 'โหมดพัฒนา (ไม่บังคับล็อกอิน)',
-                            userId: 'dev_user_' + Date.now(),
-                            pictureUrl: 'https://via.placeholder.com/50'
-                        };
-                        this.updateUserInfo();
-                        resolve();
-                        return;
+                        console.log('Login not required, using fallback');
+                        return null;
                     }
                 }
             }).then(profile => {
