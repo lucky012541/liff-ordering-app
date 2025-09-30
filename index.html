@@ -152,6 +152,26 @@
             <div class="tab-content" id="orders">
                 <div class="orders-section">
                     <h3><i class="fas fa-receipt"></i> คำสั่งซื้อของฉัน</h3>
+                    
+                    <!-- Real-time Status Banner -->
+                    <div class="realtime-status-banner" id="realtimeStatus">
+                        <div class="status-indicator">
+                            <div class="pulse-dot"></div>
+                            <span class="status-text">เชื่อมต่อสด</span>
+                        </div>
+                        <div class="last-update" id="lastUpdate">
+                            อัปเดตล่าสุด: เมื่อสักครู่
+                        </div>
+                    </div>
+
+                    <!-- Order Status Filter -->
+                    <div class="order-filters">
+                        <button class="filter-btn active" data-status="all">ทั้งหมด</button>
+                        <button class="filter-btn" data-status="pending">กำลังดำเนินการ</button>
+                        <button class="filter-btn" data-status="confirmed">ยืนยันแล้ว</button>
+                        <button class="filter-btn" data-status="completed">เสร็จสิ้น</button>
+                    </div>
+                    
                     <div class="orders-list" id="userOrdersList">
                         <!-- User orders will be loaded here -->
                     </div>

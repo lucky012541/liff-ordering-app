@@ -44,6 +44,9 @@ class OrderingApp {
             // Initialize LINE-specific features
             this.initLineFeatures();
 
+            // Initialize real-time tracking
+            this.initRealTimeTracking();
+
             // Render initial content
             this.renderProducts();
             this.updateCartUI();
@@ -4175,6 +4178,348 @@ ${itemsText}
             console.error('Error sending voice note to LINE:', error);
             this.showToast('❌ ไม่สามารถส่งใน LINE ได้', 'error');
         }
+    }
+
+    // Real-time Order Tracking System
+    initRealTimeTracking() {
+        this.realtimeConnected = true;
+        this.updateRealTimeStatus();
+        this.setupOrderFilters();
+        
+        // Simulate real-time updates every 30 seconds
+        this.realtimeInterval = setInterval(() => {
+            this.simulateOrderUpdates();
+            this.updateLastUpdateTime();
+        }, 30000);
+
+        // Update timestamp every minute
+        this.timestampInterval = setInterval(() => {
+            this.updateLastUpdateTime();
+        }, 60000);
+    }
+
+    updateRealTimeStatus() {
+        const statusBanner = document.getElementById('realtimeStatus');
+        const statusText = statusBanner?.querySelector('.status-text');
+        const pulseDot = statusBanner?.querySelector('.pulse-dot');
+        
+        if (this.realtimeConnected) {
+            if (statusText) statusText.textContent = 'เชื่อมต่อสด';
+            if (pulseDot) pulseDot.style.background = '#00C300';
+            if (statusBanner) {
+                statusBanner.style.background = 'linear-gradient(135deg, #e8f5e8, #d4f1d4)';
+                statusBanner.style.borderColor = '#00C300';
+            }
+        } else {
+            if (statusText) statusText.textContent = 'ขาดการเชื่อมต่อ';
+            if (pulseDot) pulseDot.style.background = '#dc3545';
+            if (statusBanner) {
+                statusBanner.style.background = 'linear-gradient(135deg, #ffeaea, #ffcccc)';
+                statusBanner.style.borderColor = '#dc3545';
+            }
+        }
+    }
+
+    updateLastUpdateTime() {
+        const lastUpdate = document.getElementById('lastUpdate');
+        if (lastUpdate) {
+            const now = new Date();
+            lastUpdate.textContent = `อัปเดตล่าสุด: ${now.toLocaleTimeString('th-TH')}`;
+        }
+    }
+
+    setupOrderFilters() {
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // Remove active from all buttons
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                // Add active to clicked button
+                e.target.classList.add('active');
+                
+                const status = e.target.dataset.status;
+                this.filterOrdersByStatus(status);
+            });
+        });
+    }
+
+    filterOrdersByStatus(status) {
+        const orderCards = document.querySelectorAll('.order-card');
+        orderCards.forEach(card => {
+            if (status === 'all' || card.classList.contains(status)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    simulateOrderUpdates() {
+        // Simulate random order status updates
+        if (this.orders.length > 0) {
+            const randomOrder = this.orders[Math.floor(Math.random() * this.orders.length)];
+            const statuses = ['pending', 'confirmed', 'completed'];
+            const currentIndex = statuses.indexOf(randomOrder.status);
+            
+            if (currentIndex < statuses.length - 1) {
+                randomOrder.status = statuses[currentIndex + 1];
+                randomOrder.lastUpdate = new Date().toISOString();
+                this.saveOrders();
+                this.renderOrders();
+                
+                // Send notification if in LINE
+                this.sendOrderUpdateNotification(randomOrder);
+            }
+        }
+    }
+
+    async sendOrderUpdateNotification(order) {
+        try {
+            if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+                const statusText = {
+                    'pending': 'รอตรวจสอบ',
+                    'confirmed': 'ยืนยันแล้ว',
+                    'completed': 'เสร็จสิ้น'
+                };
+
+                const message = {
+                    type: 'text',
+                    text: `🔔 อัปเดตคำสั่งซื้อ ${order.orderNumber}\n\nสถานะ: ${statusText[order.status]}\n⏰ ${new Date().toLocaleString('th-TH')}`
+                };
+
+                await liff.sendMessages([message]);
+            }
+        } catch (error) {
+            console.error('Error sending order update notification:', error);
+        }
+    }
+
+    renderOrders() {
+        const ordersList = document.getElementById('userOrdersList');
+        if (!ordersList) return;
+
+        if (this.orders.length === 0) {
+            ordersList.innerHTML = `
+                <div class="empty-orders-state">
+                    <i class="fas fa-receipt" style="font-size: 3rem; color: #e9ecef; margin-bottom: 16px;"></i>
+                    <h4 style="color: #6c757d; margin: 0 0 8px 0;">ยังไม่มีคำสั่งซื้อ</h4>
+                    <p style="color: #6c757d; margin: 0;">เริ่มสั่งซื้อสินค้าจาก LUCKY กันเถอะ!</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Sort orders by date (newest first)
+        const sortedOrders = [...this.orders].sort((a, b) => b.id - a.id);
+
+        ordersList.innerHTML = sortedOrders.map(order => this.renderOrderCard(order)).join('');
+    }
+
+    renderOrderCard(order) {
+        const statusBadges = {
+            'pending': 'status-pending',
+            'confirmed': 'status-confirmed', 
+            'completed': 'status-completed',
+            'cancelled': 'status-cancelled'
+        };
+
+        const statusTexts = {
+            'pending': 'รอตรวจสอบ',
+            'confirmed': 'ยืนยันแล้ว',
+            'completed': 'เสร็จสิ้น',
+            'cancelled': 'ยกเลิก'
+        };
+
+        const orderDate = new Date(order.timestamp || Date.now()).toLocaleDateString('th-TH');
+        const itemsText = order.items.map(item => `${item.name} x${item.quantity}`).join(', ');
+        const progress = this.getOrderProgress(order.status);
+
+        return `
+            <div class="order-card ${order.status}" data-order-id="${order.id}">
+                <div class="order-header">
+                    <div>
+                        <div class="order-number">${order.orderNumber}</div>
+                        <div class="order-date">${orderDate}</div>
+                    </div>
+                    <div class="order-status-badge ${statusBadges[order.status]}">
+                        ${statusTexts[order.status]}
+                    </div>
+                </div>
+
+                <div class="order-progress">
+                    ${progress.map(step => `
+                        <div class="progress-step">
+                            <div class="step-icon ${step.status}">
+                                ${step.status === 'completed' ? '✓' : step.status === 'current' ? '○' : '○'}
+                            </div>
+                            <div class="step-text ${step.status}">${step.text}</div>
+                            ${step.time ? `<div class="step-time">${step.time}</div>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="order-items-summary">
+                    <strong>รายการ:</strong> ${itemsText}
+                </div>
+
+                <div class="order-total">
+                    ฿${order.total}
+                </div>
+
+                <div class="order-actions">
+                    <button class="order-action-btn btn-track" onclick="app.trackOrder('${order.id}')">
+                        <i class="fas fa-map-marker-alt"></i> ติดตาม
+                    </button>
+                    <button class="order-action-btn btn-reorder" onclick="app.reorderItems('${order.id}')">
+                        <i class="fas fa-redo"></i> สั่งซ้ำ
+                    </button>
+                    <button class="order-action-btn btn-contact" onclick="app.contactAboutOrder('${order.id}')">
+                        <i class="fas fa-phone"></i> ติดต่อ
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    getOrderProgress(status) {
+        const steps = [
+            { text: 'รับคำสั่งซื้อ', key: 'received' },
+            { text: 'เตรียมสินค้า', key: 'preparing' },
+            { text: 'จัดส่ง', key: 'shipping' },
+            { text: 'เสร็จสิ้น', key: 'delivered' }
+        ];
+
+        const statusMap = {
+            'pending': 0,
+            'confirmed': 1,
+            'completed': 3
+        };
+
+        const currentStep = statusMap[status] || 0;
+
+        return steps.map((step, index) => {
+            let stepStatus = 'pending';
+            let time = '';
+
+            if (index < currentStep) {
+                stepStatus = 'completed';
+                time = this.getStepTime(index);
+            } else if (index === currentStep) {
+                stepStatus = 'current';
+            }
+
+            return { ...step, status: stepStatus, time };
+        });
+    }
+
+    getStepTime(stepIndex) {
+        // Mock timestamps for demo
+        const now = new Date();
+        const times = [
+            new Date(now.getTime() - 3600000), // 1 hour ago
+            new Date(now.getTime() - 1800000), // 30 min ago
+            new Date(now.getTime() - 900000),  // 15 min ago
+            new Date()  // now
+        ];
+
+        return times[stepIndex]?.toLocaleTimeString('th-TH', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        }) || '';
+    }
+
+    trackOrder(orderId) {
+        const order = this.orders.find(o => o.id == orderId);
+        if (!order) return;
+
+        // Create tracking modal
+        const modal = document.createElement('div');
+        modal.className = 'order-tracking-modal';
+        modal.innerHTML = `
+            <div class="tracking-modal-content">
+                <h3>🚚 ติดตามคำสั่งซื้อ ${order.orderNumber}</h3>
+                <div class="tracking-map">
+                    <div class="map-placeholder">
+                        <i class="fas fa-map" style="font-size: 3rem; color: #0088CC;"></i>
+                        <p>แผนที่การจัดส่ง</p>
+                        <p style="font-size: 0.9rem; color: #6c757d;">ระบบ GPS ติดตามการจัดส่งแบบเรียลไทม์</p>
+                    </div>
+                </div>
+                <div class="tracking-info">
+                    <div class="info-item">
+                        <strong>สถานะ:</strong> ${order.status === 'confirmed' ? 'กำลังจัดส่ง' : 'เตรียมสินค้า'}
+                    </div>
+                    <div class="info-item">
+                        <strong>เวลาโดยประมาณ:</strong> ${this.getEstimatedTime(order)}
+                    </div>
+                    <div class="info-item">
+                        <strong>ผู้จัดส่ง:</strong> ทีม LUCKY Express
+                    </div>
+                </div>
+                <div class="tracking-actions">
+                    <button class="btn-secondary" onclick="this.parentElement.parentElement.parentElement.remove()">ปิด</button>
+                    <button class="btn-success" onclick="app.callDelivery('${order.id}')">
+                        <i class="fas fa-phone"></i> โทรผู้จัดส่ง
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    getEstimatedTime(order) {
+        const minutes = Math.floor(Math.random() * 30) + 15; // 15-45 minutes
+        return `${minutes} นาที`;
+    }
+
+    reorderItems(orderId) {
+        const order = this.orders.find(o => o.id == orderId);
+        if (!order) return;
+
+        // Add items to cart
+        order.items.forEach(item => {
+            for (let i = 0; i < item.quantity; i++) {
+                this.addToCart(item);
+            }
+        });
+
+        this.showToast(`✅ เพิ่มรายการจาก ${order.orderNumber} ในตะกร้าแล้ว`, 'success');
+        this.switchTab('menu');
+    }
+
+    contactAboutOrder(orderId) {
+        const order = this.orders.find(o => o.id == orderId);
+        if (!order) return;
+
+        // Try to contact via LINE first
+        if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+            this.sendOrderInquiry(order);
+        } else {
+            // Fallback to phone call
+            window.location.href = 'tel:082-433-3339';
+        }
+    }
+
+    async sendOrderInquiry(order) {
+        try {
+            const message = {
+                type: 'text',
+                text: `💬 สอบถามเกี่ยวกับคำสั่งซื้อ ${order.orderNumber}\n\n📱 กรุณาติดต่อกลับด้วยค่ะ\n⏰ ${new Date().toLocaleString('th-TH')}`
+            };
+
+            await liff.sendMessages([message]);
+            this.showToast('📱 ส่งข้อความสอบถามใน LINE แล้ว', 'success');
+        } catch (error) {
+            console.error('Error sending inquiry:', error);
+            this.showToast('❌ ไม่สามารถส่งข้อความได้ กรุณาโทร 082-433-3339', 'error');
+        }
+    }
+
+    callDelivery(orderId) {
+        // Simulate calling delivery person
+        this.showToast('📞 กำลังโทรหาผู้จัดส่ง...', 'info');
+        setTimeout(() => {
+            window.location.href = 'tel:082-433-3339';
+        }, 1000);
     }
 }
 // Initialize the app when DOM is loaded
