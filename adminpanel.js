@@ -426,47 +426,57 @@ class AdminPanel {
     }
 
     renderOrderCard(order) {
+        // Safe access with defaults
+        const customer = order.customer || {};
+        const items = Array.isArray(order.items) ? order.items : [];
+        const orderNumber = order.orderNumber || order.id;
+        const date = order.date || 'ไม่ระบุ';
+        const status = order.status || 'pending';
+        const paymentMethod = order.paymentMethod || 'cash';
+        const total = order.total || 0;
+        
         return `
             <div class="admin-order-card" data-order-id="${order.id}">
                 <div class="order-header">
                     <div class="order-info">
-                        <h4>คำสั่งซื้อ #${order.id}</h4>
-                        <p class="order-date">${order.date}</p>
+                        <h4>คำสั่งซื้อ ${orderNumber}</h4>
+                        <p class="order-date">${date}</p>
                     </div>
                     <div class="order-status">
                         <select class="status-select" onchange="adminPanel.updateOrderStatus('${order.id}', this.value)">
-                            <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>รอตรวจสอบ</option>
-                            <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>ยืนยันแล้ว</option>
-                            <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>เสร็จสิ้น</option>
-                            <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>ยกเลิก</option>
+                            <option value="pending" ${status === 'pending' || status === 'pending_payment' ? 'selected' : ''}>รอตรวจสอบ</option>
+                            <option value="confirmed" ${status === 'confirmed' ? 'selected' : ''}>ยืนยันแล้ว</option>
+                            <option value="processing" ${status === 'processing' ? 'selected' : ''}>กำลังดำเนินการ</option>
+                            <option value="completed" ${status === 'completed' ? 'selected' : ''}>เสร็จสิ้น</option>
+                            <option value="cancelled" ${status === 'cancelled' ? 'selected' : ''}>ยกเลิก</option>
                         </select>
                     </div>
                 </div>
                 
                 <div class="order-customer">
                     <h5><i class="fas fa-user"></i> ข้อมูลลูกค้า</h5>
-                    <p><strong>ชื่อ:</strong> ${order.customer.customerName}</p>
-                    <p><strong>เบอร์:</strong> ${order.customer.customerPhone}</p>
-                    <p><strong>ที่อยู่:</strong> ${order.customer.deliveryAddress}</p>
-                    ${order.customer.deliveryNote ? `<p><strong>หมายเหตุ:</strong> ${order.customer.deliveryNote}</p>` : ''}
+                    <p><strong>ชื่อ:</strong> ${customer.customerName || 'ไม่ระบุ'}</p>
+                    <p><strong>เบอร์:</strong> ${customer.customerPhone || 'ไม่ระบุ'}</p>
+                    <p><strong>ที่อยู่:</strong> ${customer.deliveryAddress || 'ไม่ระบุ'}</p>
+                    ${customer.deliveryNote ? `<p><strong>หมายเหตุ:</strong> ${customer.deliveryNote}</p>` : ''}
                 </div>
                 
                 <div class="order-items">
                     <h5><i class="fas fa-shopping-bag"></i> รายการสินค้า</h5>
-                    ${order.items.map(item => `
+                    ${items.length > 0 ? items.map(item => `
                         <div class="order-item">
-                            <span>${item.name} x ${item.quantity}</span>
-                            <span>฿${item.price * item.quantity}</span>
+                            <span>${item.name || 'สินค้า'} x ${item.quantity || 1}</span>
+                            <span>฿${(item.price || 0) * (item.quantity || 1)}</span>
                         </div>
-                    `).join('')}
+                    `).join('') : '<p>ไม่มีรายการสินค้า</p>'}
                     <div class="order-total">
-                        <strong>รวม: ฿${order.total}</strong>
+                        <strong>รวม: ฿${total}</strong>
                     </div>
                 </div>
                 
                 <div class="order-payment">
                     <h5><i class="fas fa-credit-card"></i> การชำระเงิน</h5>
-                    <p><strong>วิธีชำระ:</strong> ${this.getPaymentMethodName(order.paymentMethod)}</p>
+                    <p><strong>วิธีชำระ:</strong> ${this.getPaymentMethodName(paymentMethod)}</p>
                     ${this.renderPaymentSlip(order)}
                 </div>
                 
@@ -483,16 +493,22 @@ class AdminPanel {
     }
 
     renderPaymentSlip(order) {
-        if (order.paymentMethod === 'cash') {
+        const paymentMethod = order.paymentMethod || 'cash';
+        
+        if (paymentMethod === 'cash') {
             return '<p>ชำระเป็นเงินสดกับผู้ส่ง</p>';
         }
         
-        // Check if order has payment slip data
-        if (order.paymentSlip) {
+        // Check for slip in multiple places
+        const slipUrl = order.paymentMeta?.slipDataUrl || order.paymentSlip || null;
+        const transferRef = order.paymentMeta?.transferRef || '';
+        
+        if (slipUrl) {
             return `
                 <div class="payment-slip">
+                    ${transferRef ? `<p><strong>หมายเลขอ้างอิง:</strong> ${transferRef}</p>` : ''}
                     <p><strong>สลิปการชำระเงิน:</strong></p>
-                    <img src="${order.paymentSlip}" alt="สลิปการชำระเงิน" class="slip-image" onclick="adminPanel.viewSlipFullscreen('${order.paymentSlip}')">
+                    <img src="${slipUrl}" alt="สลิปการชำระเงิน" class="slip-image" onclick="adminPanel.viewSlipFullscreen('${slipUrl}')" style="max-width: 200px; cursor: pointer; border-radius: 8px;">
                     <div class="slip-actions">
                         <button class="btn-verify" onclick="adminPanel.verifyPayment('${order.id}')">
                             <i class="fas fa-check"></i> ยืนยันการชำระ
@@ -505,7 +521,7 @@ class AdminPanel {
             `;
         }
         
-        return '<p class="no-slip">ยังไม่ได้อัปโหลดสลิป</p>';
+        return '<p class="no-slip">⚠️ ยังไม่ได้อัปโหลดสลิป</p>';
     }
 
     getPaymentMethodName(method) {
