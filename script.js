@@ -456,6 +456,8 @@ class OrderingApp {
     }
 
     switchTab(tabName) {
+        console.log('🔄 Switching to tab:', tabName);
+        
         // Remove active class from all tabs and contents
         document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -476,10 +478,16 @@ class OrderingApp {
         const activeContent = document.getElementById(contentId);
         if (activeContent) {
             activeContent.classList.add('active');
+            console.log('✅ Content activated:', contentId);
+        } else {
+            console.log('❌ Content not found:', contentId);
         }
 
         // Load content based on tab
         if (tabName === 'orders') {
+            console.log('📦 Loading orders...');
+            // Reload orders from localStorage
+            this.loadOrders();
             this.renderUserOrders();
         }
     }
@@ -2784,8 +2792,19 @@ ${itemsText}
         localStorage.setItem('liff_cart', JSON.stringify(this.cart));
     }
 
+    loadOrders() {
+        const savedOrders = localStorage.getItem('liff_orders');
+        if (savedOrders) {
+            this.orders = JSON.parse(savedOrders);
+            console.log('📦 Loaded orders from localStorage:', this.orders.length);
+        } else {
+            console.log('📦 No orders in localStorage');
+        }
+    }
+
     saveOrders() {
         localStorage.setItem('liff_orders', JSON.stringify(this.orders));
+        console.log('💾 Saved orders to localStorage:', this.orders.length);
     }
 
     showLoading(show) {
