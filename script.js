@@ -1871,7 +1871,17 @@ class OrderingApp {
             // Check if we can send messages
             if (typeof liff === 'undefined' || !liff.isLoggedIn()) {
                 console.warn('LIFF not available or user not logged in');
-                this.showOrderDetailsFromObject(order);  // แสดงจาก order object โดยตรง
+                this.showOrderSuccessWithDetails(order);
+                return false;
+            }
+
+            // Check permissions first
+            const permissions = liff.getPermissions();
+            console.log('🔐 LIFF Permissions:', permissions);
+            
+            if (!permissions.includes('chat.write') && !permissions.includes('chat_message.write')) {
+                console.warn('❌ No chat write permission');
+                this.handleMissingPermission(order);
                 return false;
             }
 
@@ -1889,37 +1899,101 @@ class OrderingApp {
 
             await liff.sendMessages([ownerMessage]);
 
-            console.log('Order notification sent successfully');
+            console.log('✅ Order notification sent successfully');
+            this.showToast('📱 ส่งรายละเอียดคำสั่งซื้อไปในแชทแล้ว', 'success');
             return true;
 
         } catch (error) {
-            console.error('Error sending flex message:', error);
+            console.error('❌ Error sending flex message:', error);
+            return this.handleSendMessageError(error, order);
+        }
+    }
 
-            // Enhanced error handling
-            let errorMessage = 'ไม่สามารถส่งการแจ้งเตือนได้';
-            let shouldRetry = false;
-
-            if (error.message?.includes('permission') || error.code === 403) {
-                errorMessage = 'ไม่มีสิทธิ์ส่งข้อความ กรุณาอนุญาตสิทธิ์ใน LINE';
-            } else if (error.message?.includes('network') || error.code >= 500) {
-                errorMessage = 'ปัญหาการเชื่อมต่อ กรุณาตรวจสอบอินเทอร์เน็ต';
-                shouldRetry = true;
-            } else if (error.message?.includes('quota') || error.code === 429) {
-                errorMessage = 'ส่งข้อความได้ไม่เกินจำนวนที่กำหนด กรุณารอสักครู่';
-                shouldRetry = true;
-            } else if (error.code === 400) {
-                errorMessage = 'ข้อมูลคำสั่งซื้อไม่ถูกต้อง';
+    handleMissingPermission(order) {
+        console.log('🔧 Handling missing permission...');
+        
+        // แสดง SweetAlert พร้อมวิธีแก้
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '🔐 ต้องการสิทธิ์เพิ่มเติม',
+                html: `
+                    <div style="text-align: left; padding: 20px;">
+                        <p><strong>💬 เพื่อให้ระบบส่งรายละเอียดคำสั่งซื้อไปในแชท</strong></p>
+                        
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin: 15px 0;">
+                            <h4 style="color: #1e88e5; margin: 0 0 10px 0;">📱 วิธีแก้:</h4>
+                            <p style="margin: 5px 0;"><strong>1.</strong> กดปุ่ม "รีเฟรช" ด้านล่าง</p>
+                            <p style="margin: 5px 0;"><strong>2.</strong> เมื่อมี popup ขออนุญาต → กด "อนุญาต"</p>
+                            <p style="margin: 5px 0;"><strong>3.</strong> สั่งซื้อใหม่อีกครั้ง</p>
+                        </div>
+                        
+                        <div style="background: #e8f5e8; padding: 15px; border-radius: 10px; margin: 15px 0;">
+                            <p style="color: #4caf50; margin: 0;"><strong>✅ คำสั่งซื้อของคุณสำเร็จแล้ว!</strong></p>
+                            <p style="margin: 5px 0 0 0;">หมายเลข: <strong>${order.orderNumber}</strong></p>
+                        </div>
+                    </div>
+                `,
+                confirmButtonText: '🔄 รีเฟรชและอนุญาต',
+                showCancelButton: true,
+                cancelButtonText: '📋 ดูรายละเอียด',
+                confirmButtonColor: '#1e88e5',
+                cancelButtonColor: '#4caf50'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // รีเฟรชหน้า เพื่อให้ LIFF ขออนุญาตใหม่
+                    window.location.reload();
+                } else if (result.dismiss === Swal.DismissReason.cancel) {
+                    // แสดงรายละเอียดคำสั่งซื้อ
+                    this.showOrderDetailsFromObject(order);
+                }
+            });
+        } else {
+            // Fallback สำหรับกรณีไม่มี SweetAlert
+            const userAction = confirm('🔐 ต้องการสิทธิ์ส่งข้อความ\n\nกด OK เพื่อรีเฟรชและอนุญาต\nกด Cancel เพื่อดูรายละเอียดคำสั่งซื้อ');
+            
+            if (userAction) {
+                window.location.reload();
+            } else {
+                this.showOrderDetailsFromObject(order);
             }
+        }
+    }
 
-            this.showToast(`${errorMessage}`, 'warning');
+    handleSendMessageError(error, order) {
+        let errorMessage = 'ไม่สามารถส่งการแจ้งเตือนได้';
+        let shouldShowDetails = true;
 
-            // Show order details as fallback - ใช้ order object โดยตรง
+        if (error.message?.includes('permission') || error.code === 403) {
+            // Permission error - ใช้ handleMissingPermission
+            this.handleMissingPermission(order);
+            return false;
+        } else if (error.message?.includes('network') || error.code >= 500) {
+            errorMessage = '📶 เครือข่ายขัดข้อง - คำสั่งซื้อสำเร็จแล้ว';
+            this.showToast(errorMessage, 'warning');
+        } else if (error.message?.includes('quota') || error.code === 429) {
+            errorMessage = '⏰ ส่งข้อความเยอะไป - คำสั่งซื้อสำเร็จแล้ว';
+            this.showToast(errorMessage, 'warning');
+        } else {
+            errorMessage = '❌ เกิดข้อผิดพลาด - คำสั่งซื้อสำเร็จแล้ว';
+            this.showToast(errorMessage, 'warning');
+        }
+
+        if (shouldShowDetails) {
+            // แสดงรายละเอียดคำสั่งซื้อหลังจาก error
             setTimeout(() => {
                 this.showOrderDetailsFromObject(order);
             }, 1500);
-
-            return false;
         }
+
+        return false;
+    }
+
+    showOrderSuccessWithDetails(order) {
+        // แสดงความสำเร็จและรายละเอียดเมื่อไม่มี LIFF
+        this.showToast('✅ สั่งซื้อสำเร็จ! (โหมดพัฒนา)', 'success');
+        setTimeout(() => {
+            this.showOrderDetailsFromObject(order);
+        }, 1000);
     }
 
     showOrderDetails(order) {
