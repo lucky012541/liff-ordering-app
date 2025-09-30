@@ -1998,7 +1998,7 @@ class OrderingApp {
             promptpay: 'PromptPay'
         }[order.paymentMethod] || order.paymentMethod;
 
-        const orderText = `🧊 ร้านขายน้ำแข็ง - คำสั่งซื้อ ${order.orderNumber}
+        const orderText = `🧊 LUCKY - คำสั่งซื้อ ${order.orderNumber}
 
 📋 รายการสินค้า:
 ${itemsText}
@@ -2084,7 +2084,7 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
                                     contents: [
                                         {
                                             type: 'text',
-                                            text: 'ร้านน้ำแข็งพรีเมี่ยม',
+                                            text: 'LUCKY',
                                             weight: 'bold',
                                             size: 'lg',
                                             color: '#FFFFFF',
@@ -2092,7 +2092,7 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
                                         },
                                         {
                                             type: 'text',
-                                            text: '❄️ น้ำแข็งคุณภาพสูง จัดส่งรวดเร็ว ❄️',
+                                            text: '🧊 SU-NGAI KOLOK - บริการจัดส่งด่วน 🧊',
                                             size: 'xs',
                                             color: '#FFFFFF',
                                             align: 'center',
@@ -2165,7 +2165,7 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
                             ]
                         }
                     ],
-                    backgroundColor: '#1E88E5',
+                    backgroundColor: '#0088CC',
                     paddingAll: 'lg',
                     spacing: 'sm'
                 },
@@ -2188,14 +2188,14 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
                                             size: 'lg',
                                             flex: 0,
                                             gravity: 'center',
-                                            color: '#1E88E5'
+                                            color: '#0088CC'
                                         },
                                         {
                                             type: 'text',
                                             text: 'ข้อมูลการจัดส่ง',
                                             weight: 'bold',
                                             size: 'lg',
-                                            color: '#1E88E5',
+                                            color: '#0088CC',
                                             flex: 1,
                                             margin: 'sm'
                                         }
@@ -2548,7 +2548,7 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
                                         },
                                         {
                                             type: 'text',
-                                            text: 'ติดต่อสอบถาม: 081-234-5678',
+                                            text: 'ติดต่อสอบถาม: 082-433-3339',
                                             size: 'sm',
                                             color: '#FFFFFF',
                                             flex: 1,
@@ -2606,16 +2606,16 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
                             margin: 'md'
                         }
                     ],
-                    backgroundColor: '#1E88E5',
+                    backgroundColor: '#0088CC',
                     paddingAll: 'lg',
                     spacing: 'sm'
                 },
                 styles: {
                     header: {
-                        backgroundColor: '#1E88E5'
+                        backgroundColor: '#0088CC'
                     },
                     footer: {
-                        backgroundColor: '#1E88E5'
+                        backgroundColor: '#0088CC'
                     }
                 }
             }
@@ -2627,7 +2627,7 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
             `${item.name} x${item.quantity} = ฿${item.price * item.quantity}`
         ).join('\n');
 
-        const orderText = `🧊 ร้านขายน้ำแข็ง
+        const orderText = `🧊 LUCKY
 คำสั่งซื้อ #${order.id}
 
 รายการสินค้า:
@@ -2684,7 +2684,7 @@ ${itemsText}
     }
 
     generateReceiptHTML(order) {
-        const storeName = 'ร้านขายน้ำแข็ง';
+        const storeName = 'LUCKY';
         const methodText = {
             cash: '💵 เงินสด',
             transfer: '🏦 โอนเงิน',
@@ -2760,7 +2760,7 @@ ${itemsText}
                 <div class="receipt-footer">
                     <div>ขอบคุณที่อุดหนุนร้าน 🧊</div>
                     <div style="margin-top: 8px; font-size: 0.9em; color: #666;">
-                        📞 ติดต่อเรา: 081-234-5678 | 🏠 ถนนทดสอบ แขวงทดสอบ
+                        📞 ติดต่อเรา: 082-433-3339 | 🏠 ถนนทดสอบ แขวงทดสอบ
                     </div>
                 </div>
             </div>
