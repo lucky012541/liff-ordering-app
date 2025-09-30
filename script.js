@@ -1875,15 +1875,6 @@ class OrderingApp {
                 return false;
             }
 
-            // Check permissions first
-            const permissions = liff.getPermissions();
-            console.log('🔐 LIFF Permissions:', permissions);
-            
-            if (!permissions.includes('CHAT_MESSAGE')) {
-                console.warn('❌ No chat write permission');
-                this.handleMissingPermission(order);
-                return false;
-            }
 
             // สร้าง Flex Message
             const flexMessage = this.createOrderFlexMessage(order);
