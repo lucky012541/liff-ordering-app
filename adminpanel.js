@@ -279,12 +279,18 @@ class AdminPanel {
 
         // Filter by status
         if (statusFilter !== 'all') {
-            filteredOrders = filteredOrders.filter(order => order.status === statusFilter);
+            filteredOrders = filteredOrders.filter(order => {
+                const status = order?.status || 'pending';
+                return status === statusFilter;
+            });
         }
 
         // Filter by payment method
         if (paymentFilter !== 'all') {
-            filteredOrders = filteredOrders.filter(order => order.paymentMethod === paymentFilter);
+            filteredOrders = filteredOrders.filter(order => {
+                const method = order?.paymentMethod || 'cash';
+                return method === paymentFilter;
+            });
         }
 
         // Sort by date (newest first)
@@ -314,17 +320,27 @@ class AdminPanel {
     }
 
     categorizeOrders(orders) {
+        // Filter only valid orders
+        const validOrders = orders.filter(o => o && typeof o === 'object');
+        
         return {
-            pending: orders.filter(o => o.status === 'pending' || o.status === 'pending_payment'),
-            confirmed: orders.filter(o => o.status === 'confirmed'),
-            processing: orders.filter(o => o.status === 'processing'),
-            completed: orders.filter(o => o.status === 'completed'),
-            cancelled: orders.filter(o => o.status === 'cancelled'),
-            cash: orders.filter(o => o.paymentMethod === 'cash'),
-            transfer: orders.filter(o => o.paymentMethod === 'transfer'),
-            promptpay: orders.filter(o => o.paymentMethod === 'promptpay'),
-            withSlip: orders.filter(o => o.paymentMeta?.slipDataUrl),
-            withoutSlip: orders.filter(o => !o.paymentMeta?.slipDataUrl && o.paymentMethod !== 'cash')
+            pending: validOrders.filter(o => {
+                const status = o.status || 'pending';
+                return status === 'pending' || status === 'pending_payment';
+            }),
+            confirmed: validOrders.filter(o => (o.status || '') === 'confirmed'),
+            processing: validOrders.filter(o => (o.status || '') === 'processing'),
+            completed: validOrders.filter(o => (o.status || '') === 'completed'),
+            cancelled: validOrders.filter(o => (o.status || '') === 'cancelled'),
+            cash: validOrders.filter(o => (o.paymentMethod || 'cash') === 'cash'),
+            transfer: validOrders.filter(o => (o.paymentMethod || '') === 'transfer'),
+            promptpay: validOrders.filter(o => (o.paymentMethod || '') === 'promptpay'),
+            withSlip: validOrders.filter(o => o.paymentMeta?.slipDataUrl || o.paymentSlip),
+            withoutSlip: validOrders.filter(o => {
+                const hasSlip = o.paymentMeta?.slipDataUrl || o.paymentSlip;
+                const method = o.paymentMethod || 'cash';
+                return !hasSlip && method !== 'cash';
+            })
         };
     }
 
@@ -553,9 +569,14 @@ class AdminPanel {
     }
 
     viewOrderDetails(orderId) {
-        const order = this.orders.find(o => o.id === orderId);
+        const order = this.orders.find(o => o && o.id === orderId);
         if (order) {
-            alert(`รายละเอียดคำสั่งซื้อ #${orderId}\n\nลูกค้า: ${order.customer.customerName}\nยอดรวม: ฿${order.total}\nสถานะ: ${this.getStatusName(order.status)}`);
+            const customer = order.customer || {};
+            const status = order.status || 'pending';
+            const total = order.total || 0;
+            const customerName = customer.customerName || 'ไม่ระบุ';
+            
+            alert(`รายละเอียดคำสั่งซื้อ #${orderId}\n\nลูกค้า: ${customerName}\nยอดรวม: ฿${total}\nสถานะ: ${this.getStatusName(status)}`);
         }
     }
 
@@ -874,11 +895,21 @@ class AdminPanel {
     }
 
     updateStats() {
-        // Calculate statistics
-        const totalOrders = this.orders.length;
-        const totalRevenue = this.orders.reduce((sum, order) => sum + order.total, 0);
-        const pendingOrders = this.orders.filter(o => o.status === 'pending').length;
-        const completedOrders = this.orders.filter(o => o.status === 'completed').length;
+        // Calculate statistics with safe access
+        const validOrders = this.orders.filter(o => o && typeof o === 'object');
+        const totalOrders = validOrders.length;
+        const totalRevenue = validOrders.reduce((sum, order) => {
+            const total = order.total || 0;
+            return sum + total;
+        }, 0);
+        const pendingOrders = validOrders.filter(o => {
+            const status = o.status || 'pending';
+            return status === 'pending';
+        }).length;
+        const completedOrders = validOrders.filter(o => {
+            const status = o.status || '';
+            return status === 'completed';
+        }).length;
 
         // Update UI
         const totalOrdersEl = document.getElementById('totalOrders');
