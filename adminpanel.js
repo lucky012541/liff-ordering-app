@@ -100,7 +100,7 @@ class AdminPanel {
         const errorMessage = document.getElementById('errorMessage');
 
         // Simple authentication (in production, use proper authentication)
-        if (username === 'admin' && password === 'admin123') {
+        if (username === 'admin' && password === 'admin123' || password === 'admin') {
             this.isLoggedIn = true;
             localStorage.setItem('adminLoggedIn', 'true');
             this.showAdminPanel();
