@@ -3554,6 +3554,54 @@ input[type="file"].success {
     align-items: center;
 }
 
+.status-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.notification-controls {
+    display: flex;
+    align-items: center;
+}
+
+.notification-toggle {
+    background: rgba(255, 255, 255, 0.8);
+    border: 2px solid rgba(0, 195, 0, 0.3);
+    border-radius: 12px;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #00B900;
+}
+
+.notification-toggle:hover {
+    background: rgba(255, 255, 255, 1);
+    border-color: #00C300;
+    transform: translateY(-2px);
+}
+
+.notification-toggle.enabled {
+    background: linear-gradient(135deg, #00C300, #00B900);
+    color: white;
+    border-color: #00C300;
+}
+
+.notification-toggle.enabled i {
+    animation: bell-ring 0.5s ease-in-out;
+}
+
+@keyframes bell-ring {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(15deg); }
+    75% { transform: rotate(-15deg); }
+}
+
 .status-indicator {
     display: flex;
     align-items: center;

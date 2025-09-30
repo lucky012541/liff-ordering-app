@@ -4185,6 +4185,7 @@ ${itemsText}
         this.realtimeConnected = true;
         this.updateRealTimeStatus();
         this.setupOrderFilters();
+        this.setupNotificationToggle();
         
         // Simulate real-time updates every 30 seconds
         this.realtimeInterval = setInterval(() => {
@@ -4196,6 +4197,65 @@ ${itemsText}
         this.timestampInterval = setInterval(() => {
             this.updateLastUpdateTime();
         }, 60000);
+    }
+
+    setupNotificationToggle() {
+        const toggleBtn = document.getElementById('notificationToggle');
+        if (!toggleBtn) return;
+
+        // โหลดสถานะการแจ้งเตือนที่บันทึกไว้
+        const notificationsEnabled = localStorage.getItem('notifications_enabled') === 'true';
+        this.updateNotificationToggleUI(notificationsEnabled);
+
+        toggleBtn.addEventListener('click', () => {
+            const currentState = localStorage.getItem('notifications_enabled') === 'true';
+            const newState = !currentState;
+            
+            localStorage.setItem('notifications_enabled', newState.toString());
+            this.updateNotificationToggleUI(newState);
+            
+            if (newState) {
+                this.showToast('🔔 เปิดการแจ้งเตือนแล้ว', 'success');
+                // ลองทดสอบส่งแจ้งเตือน
+                this.testNotificationPermission();
+            } else {
+                this.showToast('🔕 ปิดการแจ้งเตือนแล้ว', 'info');
+            }
+        });
+    }
+
+    updateNotificationToggleUI(enabled) {
+        const toggleBtn = document.getElementById('notificationToggle');
+        const icon = toggleBtn?.querySelector('i');
+        const text = toggleBtn?.querySelector('span');
+        
+        if (enabled) {
+            toggleBtn?.classList.add('enabled');
+            if (icon) icon.className = 'fas fa-bell';
+            if (text) text.textContent = 'แจ้งเตือนเปิด';
+        } else {
+            toggleBtn?.classList.remove('enabled');
+            if (icon) icon.className = 'fas fa-bell-slash';
+            if (text) text.textContent = 'เปิดแจ้งเตือน';
+        }
+    }
+
+    async testNotificationPermission() {
+        try {
+            if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+                const testMessage = {
+                    type: 'text',
+                    text: '🔔 ทดสอบการแจ้งเตือน LUCKY\n\nระบบแจ้งเตือนทำงานปกติแล้ว! ✅'
+                };
+                
+                await liff.sendMessages([testMessage]);
+                console.log('✅ Test notification sent successfully');
+            }
+        } catch (error) {
+            console.log('❌ Test notification failed:', error.message);
+            // แสดงคำแนะนำให้ผู้ใช้
+            this.showToast('💡 กรุณาอนุญาตสิทธิ์ส่งข้อความใน LINE', 'warning');
+        }
     }
 
     updateRealTimeStatus() {
@@ -4274,23 +4334,51 @@ ${itemsText}
 
     async sendOrderUpdateNotification(order) {
         try {
+            // ตรวจสอบว่าผู้ใช้เปิดใช้การแจ้งเตือนหรือไม่
+            const notificationsEnabled = localStorage.getItem('notifications_enabled') === 'true';
+            if (!notificationsEnabled) {
+                console.log('📵 Notifications disabled by user');
+                return;
+            }
+
             if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
-                const statusText = {
-                    'pending': 'รอตรวจสอบ',
-                    'confirmed': 'ยืนยันแล้ว',
-                    'completed': 'เสร็จสิ้น'
-                };
+                try {
+                    const statusText = {
+                        'pending': 'รอตรวจสอบ',
+                        'confirmed': 'ยืนยันแล้ว', 
+                        'completed': 'เสร็จสิ้น'
+                    };
 
-                const message = {
-                    type: 'text',
-                    text: `🔔 อัปเดตคำสั่งซื้อ ${order.orderNumber}\n\nสถานะ: ${statusText[order.status]}\n⏰ ${new Date().toLocaleString('th-TH')}`
-                };
+                    const message = {
+                        type: 'text',
+                        text: `🔔 อัปเดตคำสั่งซื้อ ${order.orderNumber}\n\nสถานะ: ${statusText[order.status]}\n⏰ ${new Date().toLocaleString('th-TH')}`
+                    };
 
-                await liff.sendMessages([message]);
+                    await liff.sendMessages([message]);
+                    console.log('✅ Order update notification sent successfully');
+                    
+                } catch (permissionError) {
+                    console.log('❌ No permission to send notifications');
+                    // แสดง notification ให้ผู้ใช้อนุญาตสิทธิ์ (เงียบๆ)
+                    this.showPermissionRequestNotification();
+                }
             }
         } catch (error) {
-            console.error('Error sending order update notification:', error);
+            console.log('⚠️ Notification service unavailable:', error.message);
+            // ไม่แสดง error ให้ผู้ใช้เห็น เพื่อไม่ให้รบกวน
         }
+    }
+
+    showPermissionRequestNotification() {
+        // แสดงแจ้งเตือนขอสิทธิ์แค่ครั้งแรก
+        const permissionRequested = localStorage.getItem('permission_requested');
+        if (permissionRequested) return;
+
+        localStorage.setItem('permission_requested', 'true');
+        
+        setTimeout(() => {
+            this.showToast('💡 เปิดการแจ้งเตือนใน LINE ได้ที่เมนูตั้งค่า', 'info');
+        }, 5000);
     }
 
     renderOrders() {

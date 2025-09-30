@@ -155,12 +155,20 @@
                     
                     <!-- Real-time Status Banner -->
                     <div class="realtime-status-banner" id="realtimeStatus">
-                        <div class="status-indicator">
-                            <div class="pulse-dot"></div>
-                            <span class="status-text">เชื่อมต่อสด</span>
+                        <div class="status-info">
+                            <div class="status-indicator">
+                                <div class="pulse-dot"></div>
+                                <span class="status-text">เชื่อมต่อสด</span>
+                            </div>
+                            <div class="last-update" id="lastUpdate">
+                                อัปเดตล่าสุด: เมื่อสักครู่
+                            </div>
                         </div>
-                        <div class="last-update" id="lastUpdate">
-                            อัปเดตล่าสุด: เมื่อสักครู่
+                        <div class="notification-controls">
+                            <button class="notification-toggle" id="notificationToggle">
+                                <i class="fas fa-bell-slash"></i>
+                                <span>เปิดแจ้งเตือน</span>
+                            </button>
                         </div>
                     </div>
 
