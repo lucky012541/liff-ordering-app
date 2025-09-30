@@ -2597,13 +2597,24 @@ ${itemsText}
     }
 
     renderUserOrders() {
+        console.log('📋 Rendering user orders...');
+        console.log('📦 Total orders:', this.orders.length);
+        
         const userOrdersList = document.getElementById('userOrdersList');
-        if (!userOrdersList) return;
+        if (!userOrdersList) {
+            console.log('❌ userOrdersList element not found');
+            return;
+        }
 
         // Filter orders by current user
         const userOrders = this.orders.filter(order =>
             !this.currentUser || order.userId === this.currentUser.userId || order.userId === 'guest'
         );
+        
+        console.log('👤 User orders:', userOrders.length);
+        if (userOrders.length > 0) {
+            console.log('📝 First order:', userOrders[0]);
+        }
 
         if (userOrders.length === 0) {
             userOrdersList.innerHTML = `
