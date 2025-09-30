@@ -3533,8 +3533,37 @@ ${itemsText}
         }
     }
 
+
+    async sendCurrentOrderToLine() {
+        try {
+            const lastOrder = this.orders[0];
+            
+            if (!lastOrder) {
+                this.showToast('❌ ไม่พบข้อมูลคำสั่งซื้อ', 'error');
+                return;
+            }
+
+            this.showToast('📱 กำลังส่งใน LINE...', 'info');
+
+            if (typeof liff === 'undefined' || !liff.isLoggedIn()) {
+                this.showToast('❌ ไม่สามารถส่งใน LINE ได้ในโหมดนี้', 'error');
+                return;
+            }
+
+            const flexMessage = this.createOrderFlexMessage(lastOrder);
+            await liff.sendMessages([flexMessage]);
+            
+            console.log('✅ Flex Message sent from receipt!');
+            this.showToast('📱 ส่งรายละเอียดคำสั่งซื้อไปในแชทแล้ว!', 'success');
+            
+        } catch (error) {
+            console.error('❌ Error sending from receipt:', error);
+            this.showToast('❌ ไม่สามารถส่งใน LINE ได้: ' + error.message, 'error');
+        }
+    }
 }
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new OrderingApp();
 });
+
