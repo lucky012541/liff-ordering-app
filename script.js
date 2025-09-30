@@ -20,8 +20,12 @@ class OrderingApp {
         // Enable login for production use
         // this.loginRequired = true; // ปิดชั่วคราวเพื่อการพัฒนา
         this.loginRequired = false;
+        
+        // Force disable login for development - override any query parameters
+        console.log('🔧 DEVELOPMENT MODE: Login requirement DISABLED');
+        
         // Allow overriding via query string (?forceLogin=1/true/on or 0/false/off)
-        this.applyLoginToggleFromQuery();
+        // this.applyLoginToggleFromQuery(); // ปิดไว้ชั่วคราว
         
         this.init();
     }
