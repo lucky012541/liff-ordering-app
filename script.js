@@ -1785,7 +1785,7 @@ class OrderingApp {
             // Check if we can send messages
             if (typeof liff === 'undefined' || !liff.isLoggedIn()) {
                 console.warn('LIFF not available or user not logged in');
-                this.showOrderDetails(order);
+                this.showOrderDetailsFromObject(order);  // แสดงจาก order object โดยตรง
                 return false;
             }
 
@@ -2809,6 +2809,64 @@ ${itemsText}
 
     showOrderDetails(orderId) {
         const order = this.orders.find(o => o && o.id === orderId);
+        if (!order) {
+            this.showToast('ไม่พบข้อมูลคำสั่งซื้อ', 'error');
+            return;
+        }
+
+        // Safe access with defaults
+        const items = Array.isArray(order.items) ? order.items : [];
+        const customer = order.customer || {};
+        const status = order.status || 'pending';
+        const paymentMethod = order.paymentMethod || 'cash';
+        const orderNumber = order.orderNumber || '#' + (order.id || 'unknown');
+        const date = order.date || 'ไม่ระบุ';
+        const total = order.total || 0;
+
+        const itemsHtml = items.map(item => `
+            <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                <span>${item.name || 'สินค้า'} x${item.quantity || 1}</span>
+                <span>฿${(item.price || 0) * (item.quantity || 1)}</span>
+            </div>
+        `).join('');
+
+        const detailsHtml = `
+            <div style="text-align: left;">
+                <h4>📋 รายละเอียดคำสั่งซื้อ ${orderNumber}</h4>
+                <div style="margin: 15px 0;">
+                    <strong>วันที่สั่ง:</strong> ${date}<br>
+                    <strong>สถานะ:</strong> ${this.getStatusText(status)}<br>
+                    <strong>วิธีชำระ:</strong> ${this.getPaymentMethodName(paymentMethod)}<br>
+                    <strong>ยอดรวม:</strong> ฿${total}
+                </div>
+
+                <h5>🛒 รายการสินค้า</h5>
+                ${itemsHtml || '<p>ไม่มีรายการสินค้า</p>'}
+
+                <h5 style="margin-top: 15px;">👤 ข้อมูลลูกค้า</h5>
+                <div style="margin: 10px 0;">
+                    <strong>ชื่อ:</strong> ${customer.customerName || 'ไม่ระบุ'}<br>
+                    <strong>เบอร์โทร:</strong> ${customer.customerPhone || 'ไม่ระบุ'}<br>
+                    <strong>ที่อยู่:</strong> ${customer.deliveryAddress || 'ไม่ระบุ'}
+                    ${customer.deliveryNote ? `<br><strong>หมายเหตุ:</strong> ${customer.deliveryNote}` : ''}
+                </div>
+            </div>
+        `;
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'รายละเอียดคำสั่งซื้อ',
+                html: detailsHtml,
+                width: '600px',
+                confirmButtonText: 'ปิด'
+            });
+        } else {
+            alert(`รายละเอียดคำสั่งซื้อ:\n\n${detailsHtml.replace(/<[^>]*>/g, '')}`);
+        }
+    }
+
+    showOrderDetailsFromObject(order) {
+        // แสดงรายละเอียดจาก order object โดยตรง (ไม่ต้องหาใน this.orders)
         if (!order) {
             this.showToast('ไม่พบข้อมูลคำสั่งซื้อ', 'error');
             return;
