@@ -3568,6 +3568,7 @@ ${itemsText}
     // LINE-specific Features
     async initLineFeatures() {
         this.loadLineProfile();
+        this.loadSmartSuggestions();
         this.loadQuickTemplates();
         this.loadFavoriteOrders();
         this.setupQuickActions();
@@ -3596,6 +3597,220 @@ ${itemsText}
             document.getElementById('profileName').textContent = 'ไม่สามารถโหลดโปรไฟล์ได้';
             document.getElementById('profileStatus').textContent = 'เกิดข้อผิดพลาด';
         }
+    }
+
+    loadSmartSuggestions() {
+        const suggestions = this.generateSmartSuggestions();
+        const carousel = document.getElementById('smartSuggestions');
+        
+        if (suggestions.length === 0) {
+            carousel.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #6c757d;">
+                    <i class="fas fa-brain" style="font-size: 2rem; margin-bottom: 12px; opacity: 0.5;"></i>
+                    <p>AI กำลังเรียนรู้รูปแบบการสั่งซื้อของคุณ</p>
+                    <p style="font-size: 0.9rem;">สั่งซื้อสักครั้งเพื่อให้ AI แนะนำสินค้าที่เหมาะสม</p>
+                </div>
+            `;
+            return;
+        }
+
+        carousel.innerHTML = suggestions.map(suggestion => `
+            <div class="suggestion-card" onclick="app.applySuggestion('${suggestion.id}')">
+                <div class="suggestion-header">
+                    <span class="suggestion-badge ${suggestion.type}-badge">${suggestion.badgeText}</span>
+                </div>
+                <h5 class="suggestion-title">${suggestion.title}</h5>
+                <p class="suggestion-description">${suggestion.description}</p>
+                <div class="suggestion-items">
+                    ${suggestion.items.map(item => `<span class="suggestion-item">${item}</span>`).join('')}
+                </div>
+                <div class="suggestion-price">฿${suggestion.price}</div>
+                <div class="suggestion-actions">
+                    <button class="add-suggestion-btn" onclick="event.stopPropagation(); app.applySuggestion('${suggestion.id}')">
+                        <i class="fas fa-plus"></i> เพิ่ม
+                    </button>
+                    <button class="view-suggestion-btn" onclick="event.stopPropagation(); app.viewSuggestionDetails('${suggestion.id}')">
+                        <i class="fas fa-eye"></i> ดู
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    generateSmartSuggestions() {
+        const suggestions = [];
+        const orderHistory = this.orders;
+        const currentTime = new Date();
+        
+        // AI-based suggestions based on order history
+        if (orderHistory.length > 0) {
+            const mostOrderedItems = this.analyzeMostOrderedItems();
+            if (mostOrderedItems.length > 0) {
+                suggestions.push({
+                    id: 'ai_frequent',
+                    type: 'ai',
+                    badgeText: 'AI แนะนำ',
+                    title: 'คุณสั่งบ่อย',
+                    description: 'สินค้าที่คุณสั่งซื้อบ่อยที่สุด',
+                    items: mostOrderedItems.slice(0, 3).map(item => item.name),
+                    price: mostOrderedItems.slice(0, 3).reduce((sum, item) => sum + item.price, 0),
+                    products: mostOrderedItems.slice(0, 3)
+                });
+            }
+        }
+
+        // Time-based suggestions
+        const hour = currentTime.getHours();
+        if (hour >= 6 && hour < 12) {
+            suggestions.push({
+                id: 'morning_special',
+                type: 'seasonal',
+                badgeText: 'เช้านี้',
+                title: 'เริ่มต้นวันใหม่',
+                description: 'น้ำแข็งสำหรับเครื่องดื่มเช้า',
+                items: ['น้ำแข็ง เล็ก', 'น้ำดื่ม 1.5L'],
+                price: 60,
+                products: [
+                    { id: 1, name: 'น้ำแข็ง เล็ก', price: 40, quantity: 1 },
+                    { id: 2, name: 'น้ำดื่ม 1.5L', price: 20, quantity: 1 }
+                ]
+            });
+        } else if (hour >= 12 && hour < 18) {
+            suggestions.push({
+                id: 'afternoon_combo',
+                type: 'trending',
+                badgeText: 'ยอดนิยม',
+                title: 'คอมโบช่วงเที่ยง',
+                description: 'ชุดน้ำแข็งสำหรับร้านอาหาร',
+                items: ['น้ำแข็ง กลาง', 'น้ำแข็ง เล็ก'],
+                price: 120,
+                products: [
+                    { id: 3, name: 'น้ำแข็ง กลาง', price: 80, quantity: 1 },
+                    { id: 1, name: 'น้ำแข็ง เล็ก', price: 40, quantity: 1 }
+                ]
+            });
+        } else if (hour >= 18) {
+            suggestions.push({
+                id: 'evening_pack',
+                type: 'ai',
+                badgeText: 'ช่วงเย็น',
+                title: 'แพ็คเย็น',
+                description: 'น้ำแข็งสำหรับปาร์ตี้และงานเลียงค์',
+                items: ['น้ำแข็ง ใหญ่', 'น้ำแข็ง กลาง'],
+                price: 200,
+                products: [
+                    { id: 4, name: 'น้ำแข็ง ใหญ่', price: 120, quantity: 1 },
+                    { id: 3, name: 'น้ำแข็ง กลาง', price: 80, quantity: 1 }
+                ]
+            });
+        }
+
+        // Weather-based suggestions (mock data)
+        if (Math.random() > 0.5) { // Simulate hot weather
+            suggestions.push({
+                id: 'hot_weather',
+                type: 'seasonal',
+                badgeText: 'อากาศร้อน',
+                title: 'วันนี้อากาศร้อน',
+                description: 'น้ำแข็งเพิ่มพิเศษสำหรับวันที่อากาศร้อน',
+                items: ['น้ำแข็ง ใหญ่', 'น้ำดื่ม 1.5L'],
+                price: 140,
+                products: [
+                    { id: 4, name: 'น้ำแข็ง ใหญ่', price: 120, quantity: 1 },
+                    { id: 2, name: 'น้ำดื่ม 1.5L', price: 20, quantity: 1 }
+                ]
+            });
+        }
+
+        // Special promotions
+        suggestions.push({
+            id: 'lucky_combo',
+            type: 'trending',
+            badgeText: 'โปรโมชั่น',
+            title: 'LUCKY คอมโบ',
+            description: 'แพ็คพิเศษจากร้าน LUCKY ลดราคา 20%',
+            items: ['น้ำแข็ง กลาง x2', 'น้ำดื่ม 1.5L'],
+            price: 150,
+            originalPrice: 180,
+            products: [
+                { id: 3, name: 'น้ำแข็ง กลาง', price: 80, quantity: 2 },
+                { id: 2, name: 'น้ำดื่ม 1.5L', price: 20, quantity: 1 }
+            ]
+        });
+
+        return suggestions.slice(0, 4); // Show max 4 suggestions
+    }
+
+    analyzeMostOrderedItems() {
+        const itemCount = {};
+        
+        this.orders.forEach(order => {
+            order.items.forEach(item => {
+                if (itemCount[item.name]) {
+                    itemCount[item.name].count += item.quantity;
+                } else {
+                    itemCount[item.name] = { ...item, count: item.quantity };
+                }
+            });
+        });
+
+        return Object.values(itemCount)
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5);
+    }
+
+    applySuggestion(suggestionId) {
+        const suggestions = this.generateSmartSuggestions();
+        const suggestion = suggestions.find(s => s.id === suggestionId);
+        
+        if (!suggestion) return;
+
+        // Add products to cart
+        suggestion.products.forEach(product => {
+            for (let i = 0; i < product.quantity; i++) {
+                this.addToCart(product);
+            }
+        });
+
+        this.showToast(`✨ เพิ่ม "${suggestion.title}" ในตะกร้าแล้ว`, 'success');
+        this.switchTab('menu');
+    }
+
+    viewSuggestionDetails(suggestionId) {
+        const suggestions = this.generateSmartSuggestions();
+        const suggestion = suggestions.find(s => s.id === suggestionId);
+        
+        if (!suggestion) return;
+
+        // Create detailed view modal
+        const modal = document.createElement('div');
+        modal.className = 'suggestion-detail-modal';
+        modal.innerHTML = `
+            <div class="suggestion-detail-content">
+                <h3>${suggestion.title} <span class="suggestion-badge ${suggestion.type}-badge">${suggestion.badgeText}</span></h3>
+                <p>${suggestion.description}</p>
+                <div class="suggestion-detail-items">
+                    <h4>รายการสินค้า:</h4>
+                    ${suggestion.products.map(product => `
+                        <div class="detail-item">
+                            <span>${product.name} x${product.quantity}</span>
+                            <span>฿${product.price * product.quantity}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="suggestion-detail-total">
+                    ${suggestion.originalPrice ? `<span class="original-price">฿${suggestion.originalPrice}</span>` : ''}
+                    <span class="final-price">฿${suggestion.price}</span>
+                </div>
+                <div class="suggestion-detail-actions">
+                    <button class="btn-secondary" onclick="this.parentElement.parentElement.parentElement.remove()">ปิด</button>
+                    <button class="btn-primary" onclick="app.applySuggestion('${suggestionId}'); this.parentElement.parentElement.parentElement.remove();">
+                        <i class="fas fa-cart-plus"></i> เพิ่มในตะกร้า
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
     }
 
     loadQuickTemplates() {

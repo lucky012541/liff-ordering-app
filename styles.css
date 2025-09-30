@@ -280,6 +280,7 @@ body {
     transform: rotate(180deg);
 }
 
+.smart-suggestions-section,
 .quick-templates-section,
 .favorites-section,
 .quick-actions-section {
@@ -288,6 +289,169 @@ body {
     padding: 20px;
     margin-bottom: 20px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.smart-suggestions-section {
+    background: linear-gradient(135deg, #f8f9ff, #e8f0ff);
+    border: 2px solid #e3f2fd;
+}
+
+.suggestions-carousel {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding-bottom: 12px;
+    scroll-behavior: smooth;
+}
+
+.suggestions-carousel::-webkit-scrollbar {
+    height: 6px;
+}
+
+.suggestions-carousel::-webkit-scrollbar-track {
+    background: rgba(0, 136, 204, 0.1);
+    border-radius: 3px;
+}
+
+.suggestions-carousel::-webkit-scrollbar-thumb {
+    background: #0088CC;
+    border-radius: 3px;
+}
+
+.suggestion-card {
+    flex: 0 0 280px;
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.suggestion-card::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, #0088CC, #00C300, #ff8c00);
+    border-radius: 12px;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.suggestion-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 136, 204, 0.2);
+}
+
+.suggestion-card:hover::before {
+    opacity: 1;
+}
+
+.suggestion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.suggestion-badge {
+    background: linear-gradient(135deg, #0088CC, #005AA6);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.ai-badge {
+    background: linear-gradient(135deg, #ff8c00, #e67e22);
+}
+
+.trending-badge {
+    background: linear-gradient(135deg, #00C300, #00B900);
+}
+
+.seasonal-badge {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+}
+
+.suggestion-title {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1rem;
+    margin: 0 0 8px 0;
+}
+
+.suggestion-description {
+    font-size: 0.9rem;
+    color: #6c757d;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.suggestion-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.suggestion-item {
+    background: #e3f2fd;
+    color: #0088CC;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.suggestion-price {
+    font-weight: 600;
+    color: #0088CC;
+    font-size: 1.1rem;
+}
+
+.suggestion-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.suggestion-actions button {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.add-suggestion-btn {
+    background: linear-gradient(135deg, #0088CC, #005AA6);
+    color: white;
+}
+
+.add-suggestion-btn:hover {
+    background: linear-gradient(135deg, #005AA6, #004080);
+}
+
+.view-suggestion-btn {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.view-suggestion-btn:hover {
+    background: #e9ecef;
+    color: #495057;
 }
 
 .quick-templates-section h4,
@@ -3282,4 +3446,98 @@ input[type="file"].success {
         width: 100%;
         justify-content: center;
     }
+}
+
+/* Suggestion Detail Modal */
+.suggestion-detail-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(8px);
+}
+
+.suggestion-detail-content {
+    background: white;
+    border-radius: 20px;
+    padding: 32px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.suggestion-detail-content h3 {
+    color: #2c3e50;
+    margin: 0 0 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.suggestion-detail-items {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 20px 0;
+}
+
+.suggestion-detail-items h4 {
+    margin: 0 0 12px 0;
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-detail-total {
+    text-align: right;
+    margin: 20px 0;
+}
+
+.original-price {
+    color: #6c757d;
+    text-decoration: line-through;
+    margin-right: 8px;
+    font-size: 0.9rem;
+}
+
+.final-price {
+    color: #0088CC;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.suggestion-detail-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.suggestion-detail-actions button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
