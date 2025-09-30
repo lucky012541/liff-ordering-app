@@ -2568,7 +2568,7 @@ ${itemsText}
                     </div>
                     <div class="order-actions">
                         ${order.status === 'pending' ? `
-                            <button class="confirm-btn" onclick="app.confirmOrder(${order.id})">
+                            <button class="confirm-btn" onclick="app.adminConfirmOrder(${order.id})">
                                 <i class="fas fa-check"></i> ยืนยัน
                             </button>
                             <button class="cancel-btn" onclick="app.updateOrderStatus(${order.id}, 'cancelled')">
@@ -2732,7 +2732,7 @@ ${itemsText}
     }
 
     // ฟังก์ชันสำหรับเจ้าของร้านยืนยันคำสั่งซื้อ
-    confirmOrder(orderId) {
+    adminConfirmOrder(orderId) {
         const order = this.orders.find(o => o.id === orderId);
         if (order) {
             order.status = 'confirmed';
