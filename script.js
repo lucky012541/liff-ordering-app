@@ -693,42 +693,44 @@ class OrderingApp {
         // Enable/disable checkout button
         if (checkoutBtn) checkoutBtn.disabled = this.cart.length === 0;
 
-        // Render cart items
-        if (this.cart.length === 0) {
-            cartItems.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-shopping-bag"></i>
-                    <h3>ตะกร้าว่าง</h3>
-                    <p>เพิ่มสินค้าลงตะกร้าเพื่อเริ่มสั่งซื้อ</p>
-                </div>
-            `;
-        } else {
-            cartItems.innerHTML = this.cart.map(item => `
-                <div class="cart-item">
-                    <div class="item-icon">
-                        <i class="${item.icon}"></i>
+        // Render cart items - only if cartItems element exists
+        if (cartItems) {
+            if (this.cart.length === 0) {
+                cartItems.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-shopping-bag"></i>
+                        <h3>ตะกร้าว่าง</h3>
+                        <p>เพิ่มสินค้าลงตะกร้าเพื่อเริ่มสั่งซื้อ</p>
                     </div>
-                    <div class="item-details">
-                        <div class="item-name">${item.name}</div>
-                        <div class="item-price">฿${item.price} ต่อชิ้น</div>
-                    </div>
-                    <div class="item-controls">
-                        <div class="cart-quantity-controls">
-                            <button class="quantity-btn minus" onclick="app.updateCartQuantity(${item.id}, ${item.quantity - 1})">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                            <span class="item-quantity">${item.quantity}</span>
-                            <button class="quantity-btn plus" onclick="app.updateCartQuantity(${item.id}, ${item.quantity + 1})">
-                                <i class="fas fa-plus"></i>
+                `;
+            } else {
+                cartItems.innerHTML = this.cart.map(item => `
+                    <div class="cart-item">
+                        <div class="item-icon">
+                            <i class="${item.icon}"></i>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-name">${item.name}</div>
+                            <div class="item-price">฿${item.price} ต่อชิ้น</div>
+                        </div>
+                        <div class="item-controls">
+                            <div class="cart-quantity-controls">
+                                <button class="quantity-btn minus" onclick="app.updateCartQuantity(${item.id}, ${item.quantity - 1})">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <span class="item-quantity">${item.quantity}</span>
+                                <button class="quantity-btn plus" onclick="app.updateCartQuantity(${item.id}, ${item.quantity + 1})">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <div class="item-total">฿${item.price * item.quantity}</div>
+                            <button class="quantity-btn remove" onclick="app.removeFromCart(${item.id})" title="ลบสินค้า">
+                                <i class="fas fa-trash"></i>
                             </button>
                         </div>
-                        <div class="item-total">฿${item.price * item.quantity}</div>
-                        <button class="quantity-btn remove" onclick="app.removeFromCart(${item.id})" title="ลบสินค้า">
-                            <i class="fas fa-trash"></i>
-                        </button>
                     </div>
-                </div>
-            `).join('');
+                `).join('');
+            }
         }
     }
 
