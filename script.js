@@ -1913,9 +1913,9 @@ class OrderingApp {
 
             this.showToast(`${errorMessage}`, 'warning');
 
-            // Show order details as fallback
+            // Show order details as fallback - ใช้ order object โดยตรง
             setTimeout(() => {
-                this.showOrderDetails(order);
+                this.showOrderDetailsFromObject(order);
             }, 1500);
 
             return false;
