@@ -1881,21 +1881,33 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
     }
 
     createOrderFlexMessage(order) {
+        // Safe access with defaults
+        const customer = order.customer || {};
+        const items = Array.isArray(order.items) ? order.items : [];
+        const orderNumber = order.orderNumber || '#' + (order.id || 'unknown');
+        const paymentMethod = order.paymentMethod || 'cash';
+        const total = order.total || 0;
+        const status = order.status || 'pending';
+
         const paymentMethodText = {
-            'cash': '💵 เงินสด',
-            'transfer': '🏦 โอนเงิน',
-            'promptpay': '📱 PromptPay'
+            'cash': '💵 เงินสด (ชำระปลายทาง)',
+            'transfer': '🏦 โอนเงิน (ธนาคาร)',
+            'promptpay': '📱 PromptPay (QR Code)'
         };
 
-        const paymentIcons = {
-            'cash': '💵',
-            'transfer': '🏦',
-            'promptpay': '📱'
+        const statusText = {
+            'pending': '⏳ รอตรวจสอบ',
+            'pending_payment': '💳 รอการชำระเงิน',
+            'confirmed': '✅ ยืนยันแล้ว',
+            'processing': '🔄 กำลังเตรียม',
+            'ready': '🚚 พร้อมจัดส่ง',
+            'completed': '🎉 เสร็จสิ้น',
+            'cancelled': '❌ ยกเลิก'
         };
 
         return {
             type: 'flex',
-            altText: `🧊 คำสั่งซื้อ #${order.id} - ฿${order.total}`,
+            altText: `🧊 คำสั่งซื้อ ${orderNumber} - ฿${total.toLocaleString()}`,
             contents: {
                 type: 'bubble',
                 size: 'giga',
@@ -1910,9 +1922,10 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
                                 {
                                     type: 'text',
                                     text: '🧊',
-                                    size: 'xl',
+                                    size: 'xxl',
                                     align: 'center',
-                                    flex: 1
+                                    flex: 1,
+                                    gravity: 'center'
                                 },
                                 {
                                     type: 'box',
@@ -1920,7 +1933,7 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
                                     contents: [
                                         {
                                             type: 'text',
-                                            text: 'ร้านขายน้ำแข็ง',
+                                            text: 'ร้านน้ำแข็งพรีเมี่ยม',
                                             weight: 'bold',
                                             size: 'lg',
                                             color: '#FFFFFF',
@@ -1928,41 +1941,82 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
                                         },
                                         {
                                             type: 'text',
-                                            text: '❄️ บริการจัดส่งน้ำแข็ง ❄️',
+                                            text: '❄️ น้ำแข็งคุณภาพสูง จัดส่งรวดเร็ว ❄️',
                                             size: 'xs',
                                             color: '#FFFFFF',
                                             align: 'center',
-                                            margin: 'sm'
+                                            margin: 'xs',
+                                            wrap: true
                                         }
                                     ],
-                                    flex: 4
+                                    flex: 4,
+                                    gravity: 'center'
                                 }
                             ]
                         },
                         {
+                            type: 'separator',
+                            margin: 'md',
+                            color: '#FFFFFF'
+                        },
+                        {
                             type: 'box',
-                            layout: 'horizontal',
+                            layout: 'vertical',
                             contents: [
                                 {
-                                    type: 'text',
-                                    text: `📋 คำสั่งซื้อ #${order.id}`,
-                                    size: 'sm',
-                                    color: '#FFFFFF',
-                                    weight: 'bold'
+                                    type: 'box',
+                                    layout: 'horizontal',
+                                    contents: [
+                                        {
+                                            type: 'text',
+                                            text: `📋 คำสั่งซื้อ ${orderNumber}`,
+                                            size: 'md',
+                                            color: '#FFFFFF',
+                                            weight: 'bold',
+                                            flex: 1
+                                        },
+                                        {
+                                            type: 'text',
+                                            text: statusText[status] || '⏳ รอตรวจสอบ',
+                                            size: 'sm',
+                                            color: '#FFFFFF',
+                                            align: 'end',
+                                            weight: 'bold',
+                                            backgroundColor: 'rgba(255,255,255,0.2)',
+                                            cornerRadius: 'lg',
+                                            paddingAll: 'xs'
+                                        }
+                                    ],
+                                    margin: 'sm'
                                 },
                                 {
-                                    type: 'text',
-                                    text: `⏰ ${order.date}`,
-                                    size: 'xs',
-                                    color: '#FFFFFF',
-                                    align: 'end'
+                                    type: 'box',
+                                    layout: 'horizontal',
+                                    contents: [
+                                        {
+                                            type: 'text',
+                                            text: `⏰ วันที่สั่ง: ${order.date || 'ไม่ระบุ'}`,
+                                            size: 'xs',
+                                            color: '#FFFFFF',
+                                            flex: 1
+                                        },
+                                        {
+                                            type: 'text',
+                                            text: `💰 ฿${total.toLocaleString()}`,
+                                            size: 'lg',
+                                            color: '#FFFFFF',
+                                            align: 'end',
+                                            weight: 'bold'
+                                        }
+                                    ],
+                                    margin: 'xs'
                                 }
-                            ],
-                            margin: 'md'
+                            ]
                         }
                     ],
-                    backgroundColor: '#FF8C00',
-                    paddingAll: 'lg'
+                    backgroundColor: '#1E88E5',
+                    paddingAll: 'lg',
+                    spacing: 'sm'
                 },
                 body: {
                     type: 'box',
@@ -1980,61 +2034,130 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
                                         {
                                             type: 'text',
                                             text: '👤',
-                                            size: 'sm',
-                                            flex: 1
+                                            size: 'lg',
+                                            flex: 0,
+                                            gravity: 'center',
+                                            color: '#1E88E5'
                                         },
                                         {
                                             type: 'text',
-                                            text: 'ข้อมูลลูกค้า',
+                                            text: 'ข้อมูลการจัดส่ง',
                                             weight: 'bold',
-                                            size: 'md',
-                                            color: '#FF8C00',
-                                            flex: 5
+                                            size: 'lg',
+                                            color: '#1E88E5',
+                                            flex: 1,
+                                            margin: 'sm'
                                         }
-                                    ]
+                                    ],
+                                    paddingAll: 'md',
+                                    backgroundColor: '#E3F2FD',
+                                    cornerRadius: 'lg'
                                 },
                                 {
                                     type: 'box',
                                     layout: 'vertical',
                                     contents: [
                                         {
-                                            type: 'text',
-                                            text: `📛 ${order.deliveryInfo.customerName}`,
-                                            size: 'sm',
-                                            color: '#333333',
+                                            type: 'box',
+                                            layout: 'horizontal',
+                                            contents: [
+                                                {
+                                                    type: 'text',
+                                                    text: '👨‍💼',
+                                                    flex: 0,
+                                                    gravity: 'center'
+                                                },
+                                                {
+                                                    type: 'text',
+                                                    text: customer.customerName || 'ไม่ระบุ',
+                                                    size: 'md',
+                                                    color: '#333333',
+                                                    weight: 'bold',
+                                                    flex: 1,
+                                                    margin: 'sm',
+                                                    wrap: true
+                                                }
+                                            ],
+                                            margin: 'md'
+                                        },
+                                        {
+                                            type: 'box',
+                                            layout: 'horizontal',
+                                            contents: [
+                                                {
+                                                    type: 'text',
+                                                    text: '📞',
+                                                    flex: 0,
+                                                    gravity: 'center'
+                                                },
+                                                {
+                                                    type: 'text',
+                                                    text: customer.customerPhone || 'ไม่ระบุ',
+                                                    size: 'md',
+                                                    color: '#333333',
+                                                    flex: 1,
+                                                    margin: 'sm'
+                                                }
+                                            ],
                                             margin: 'sm'
                                         },
                                         {
-                                            type: 'text',
-                                            text: `📞 ${order.deliveryInfo.customerPhone}`,
-                                            size: 'sm',
-                                            color: '#333333',
-                                            margin: 'xs'
+                                            type: 'box',
+                                            layout: 'horizontal',
+                                            contents: [
+                                                {
+                                                    type: 'text',
+                                                    text: '🏠',
+                                                    flex: 0,
+                                                    gravity: 'top',
+                                                    margin: 'xs'
+                                                },
+                                                {
+                                                    type: 'text',
+                                                    text: customer.deliveryAddress || 'ไม่ระบุ',
+                                                    size: 'md',
+                                                    color: '#333333',
+                                                    flex: 1,
+                                                    margin: 'sm',
+                                                    wrap: true
+                                                }
+                                            ],
+                                            margin: 'sm'
                                         },
-                                        {
-                                            type: 'text',
-                                            text: `🏠 ${order.deliveryInfo.deliveryAddress}`,
-                                            size: 'sm',
-                                            color: '#333333',
-                                            margin: 'xs',
-                                            wrap: true
-                                        },
-                                        ...(order.deliveryInfo.deliveryNote ? [{
-                                            type: 'text',
-                                            text: `📝 หมายเหตุ: ${order.deliveryInfo.deliveryNote}`,
-                                            size: 'sm',
-                                            color: '#666666',
-                                            margin: 'xs',
-                                            wrap: true
+                                        ...(customer.deliveryNote ? [{
+                                            type: 'box',
+                                            layout: 'horizontal',
+                                            contents: [
+                                                {
+                                                    type: 'text',
+                                                    text: '📝',
+                                                    flex: 0,
+                                                    gravity: 'top',
+                                                    margin: 'xs'
+                                                },
+                                                {
+                                                    type: 'text',
+                                                    text: customer.deliveryNote,
+                                                    size: 'sm',
+                                                    color: '#666666',
+                                                    flex: 1,
+                                                    margin: 'sm',
+                                                    wrap: true,
+                                                    style: 'italic'
+                                                }
+                                            ],
+                                            margin: 'sm'
                                         }] : [])
                                     ],
-                                    margin: 'md',
-                                    backgroundColor: '#F8F9FA',
-                                    cornerRadius: 'md',
-                                    paddingAll: 'md'
+                                    margin: 'sm',
+                                    backgroundColor: '#FAFAFA',
+                                    cornerRadius: 'lg',
+                                    paddingAll: 'md',
+                                    borderWidth: '1px',
+                                    borderColor: '#E0E0E0'
                                 }
                             ],
-                            margin: 'md'
+                            margin: 'lg'
                         },
 
                         // Payment Method Section
@@ -2049,18 +2172,24 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
                                         {
                                             type: 'text',
                                             text: '💳',
-                                            size: 'sm',
-                                            flex: 1
+                                            size: 'lg',
+                                            flex: 0,
+                                            gravity: 'center',
+                                            color: '#4CAF50'
                                         },
                                         {
                                             type: 'text',
                                             text: 'วิธีการชำระเงิน',
                                             weight: 'bold',
-                                            size: 'md',
-                                            color: '#FF8C00',
-                                            flex: 5
+                                            size: 'lg',
+                                            color: '#4CAF50',
+                                            flex: 1,
+                                            margin: 'sm'
                                         }
-                                    ]
+                                    ],
+                                    paddingAll: 'md',
+                                    backgroundColor: '#E8F5E8',
+                                    cornerRadius: 'lg'
                                 },
                                 {
                                     type: 'box',
@@ -2068,26 +2197,23 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
                                     contents: [
                                         {
                                             type: 'text',
-                                            text: paymentIcons[order.paymentMethod] || '💵',
+                                            text: paymentMethodText[paymentMethod] || '💵 เงินสด (ชำระปลายทาง)',
                                             size: 'md',
-                                            flex: 1
-                                        },
-                                        {
-                                            type: 'text',
-                                            text: paymentMethodText[order.paymentMethod] || '💵 เงินสด',
-                                            size: 'sm',
                                             color: '#333333',
                                             weight: 'bold',
-                                            flex: 5
+                                            flex: 1,
+                                            wrap: true
                                         }
                                     ],
-                                    margin: 'md',
-                                    backgroundColor: '#FFF3CD',
-                                    cornerRadius: 'md',
-                                    paddingAll: 'md'
+                                    margin: 'sm',
+                                    backgroundColor: '#F1F8E9',
+                                    cornerRadius: 'lg',
+                                    paddingAll: 'md',
+                                    borderWidth: '2px',
+                                    borderColor: '#4CAF50'
                                 }
                             ],
-                            margin: 'md'
+                            margin: 'lg'
                         },
 
                         // Order Items Section
@@ -2102,47 +2228,88 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
                                         {
                                             type: 'text',
                                             text: '🛒',
-                                            size: 'sm',
-                                            flex: 1
+                                            size: 'lg',
+                                            flex: 0,
+                                            gravity: 'center',
+                                            color: '#FF9800'
                                         },
                                         {
                                             type: 'text',
-                                            text: 'รายการสินค้า',
+                                            text: `รายการสินค้า (${items.length} รายการ)`,
                                             weight: 'bold',
-                                            size: 'md',
-                                            color: '#FF8C00',
-                                            flex: 5
+                                            size: 'lg',
+                                            color: '#FF9800',
+                                            flex: 1,
+                                            margin: 'sm'
                                         }
-                                    ]
+                                    ],
+                                    paddingAll: 'md',
+                                    backgroundColor: '#FFF3E0',
+                                    cornerRadius: 'lg'
                                 },
-                                ...order.items.map(item => ({
+                                ...items.map((item, index) => ({
                                     type: 'box',
                                     layout: 'horizontal',
                                     contents: [
                                         {
                                             type: 'text',
-                                            text: `• ${item.name}`,
+                                            text: `${index + 1}.`,
                                             size: 'sm',
-                                            color: '#333333',
-                                            flex: 4,
-                                            wrap: true
+                                            color: '#FF9800',
+                                            weight: 'bold',
+                                            flex: 0,
+                                            gravity: 'center'
                                         },
                                         {
-                                            type: 'text',
-                                            text: `x${item.quantity}`,
-                                            backgroundColor: '#F8F9FA',
-                                            cornerRadius: 'sm',
-                                            paddingAll: 'sm'
-                                        },
+                                            type: 'box',
+                                            layout: 'vertical',
+                                            contents: [
+                                                {
+                                                    type: 'text',
+                                                    text: item.name || 'สินค้า',
+                                                    size: 'md',
+                                                    color: '#333333',
+                                                    weight: 'bold',
+                                                    wrap: true
+                                                },
+                                                {
+                                                    type: 'box',
+                                                    layout: 'horizontal',
+                                                    contents: [
+                                                        {
+                                                            type: 'text',
+                                                            text: `฿${(item.price || 0).toLocaleString()} x ${item.quantity || 1}`,
+                                                            size: 'sm',
+                                                            color: '#666666',
+                                                            flex: 1
+                                                        },
+                                                        {
+                                                            type: 'text',
+                                                            text: `฿${((item.price || 0) * (item.quantity || 1)).toLocaleString()}`,
+                                                            size: 'md',
+                                                            color: '#FF9800',
+                                                            weight: 'bold',
+                                                            align: 'end'
+                                                        }
+                                                    ],
+                                                    margin: 'xs'
+                                                }
+                                            ],
+                                            flex: 1,
+                                            margin: 'sm'
+                                        }
                                     ],
-                                    margin: 'xs',
-                                    backgroundColor: '#FFF3CD',
-                                    cornerRadius: 'md',
-                                    paddingAll: 'md'
+                                    margin: 'sm',
+                                    backgroundColor: '#FFFBF0',
+                                    cornerRadius: 'lg',
+                                    paddingAll: 'md',
+                                    borderWidth: '1px',
+                                    borderColor: '#FFE0B2'
                                 })),
                                 {
                                     type: 'separator',
-                                    margin: 'md'
+                                    margin: 'lg',
+                                    color: '#E0E0E0'
                                 },
                                 {
                                     type: 'box',
@@ -2151,28 +2318,29 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
                                         {
                                             type: 'text',
                                             text: '💰 ยอดรวมทั้งสิ้น',
-                                            size: 'md',
+                                            size: 'lg',
                                             weight: 'bold',
-                                            color: '#FF8C00',
-                                            flex: 3
+                                            color: '#FFFFFF',
+                                            flex: 1,
+                                            gravity: 'center'
                                         },
                                         {
                                             type: 'text',
-                                            text: `฿${order.total}`,
-                                            size: 'lg',
+                                            text: `฿${total.toLocaleString()}`,
+                                            size: 'xxl',
                                             weight: 'bold',
-                                            color: '#FF8C00',
-                                            flex: 2,
-                                            align: 'end'
+                                            color: '#FFFFFF',
+                                            align: 'end',
+                                            gravity: 'center'
                                         }
                                     ],
                                     margin: 'md',
-                                    backgroundColor: '#FFF3CD',
-                                    cornerRadius: 'md',
-                                    paddingAll: 'md'
+                                    backgroundColor: '#FF5722',
+                                    cornerRadius: 'lg',
+                                    paddingAll: 'lg'
                                 }
                             ],
-                            margin: 'md'
+                            margin: 'lg'
                         }
                     ]
                 },
@@ -2182,59 +2350,121 @@ ${order.customer.deliveryNote ? `📝 หมายเหตุ: ${order.customer
                     contents: [
                         {
                             type: 'box',
-                            layout: 'horizontal',
+                            layout: 'vertical',
                             contents: [
                                 {
                                     type: 'text',
                                     text: '🎉 ขอบคุณสำหรับการสั่งซื้อ!',
-                                    size: 'sm',
+                                    size: 'lg',
                                     color: '#FFFFFF',
                                     weight: 'bold',
                                     align: 'center',
                                     wrap: true
+                                },
+                                {
+                                    type: 'text',
+                                    text: 'ร้านจะติดต่อกลับเพื่อยืนยันคำสั่งซื้อและนัดหมายการจัดส่ง',
+                                    size: 'sm',
+                                    color: '#FFFFFF',
+                                    align: 'center',
+                                    margin: 'sm',
+                                    wrap: true
                                 }
                             ],
-                            backgroundColor: '#28A745',
+                            backgroundColor: '#4CAF50',
                             cornerRadius: 'lg',
-                            paddingAll: 'md',
+                            paddingAll: 'lg',
                             margin: 'md'
+                        },
+                        {
+                            type: 'separator',
+                            margin: 'md',
+                            color: 'rgba(255,255,255,0.3)'
                         },
                         {
                             type: 'box',
                             layout: 'vertical',
                             contents: [
                                 {
-                                    type: 'text',
-                                    text: '📢 สำหรับเจ้าของร้าน:',
-                                    size: 'xs',
-                                    color: '#FFFFFF',
-                                    weight: 'bold',
-                                    align: 'center'
+                                    type: 'box',
+                                    layout: 'horizontal',
+                                    contents: [
+                                        {
+                                            type: 'text',
+                                            text: '📞',
+                                            flex: 0,
+                                            gravity: 'center'
+                                        },
+                                        {
+                                            type: 'text',
+                                            text: 'ติดต่อสอบถาม: 081-234-5678',
+                                            size: 'sm',
+                                            color: '#FFFFFF',
+                                            flex: 1,
+                                            margin: 'sm',
+                                            gravity: 'center'
+                                        }
+                                    ]
                                 },
                                 {
-                                    type: 'text',
-                                    text: 'ตอบกลับ "ยืนยัน" หรือ "ยกเลิก" เพื่อจัดการคำสั่งซื้อ',
-                                    size: 'xs',
-                                    color: '#FFFFFF',
-                                    align: 'center',
-                                    margin: 'xs',
-                                    wrap: true
+                                    type: 'box',
+                                    layout: 'horizontal',
+                                    contents: [
+                                        {
+                                            type: 'text',
+                                            text: '🕐',
+                                            flex: 0,
+                                            gravity: 'center'
+                                        },
+                                        {
+                                            type: 'text',
+                                            text: 'เวลาทำการ: 06:00 - 18:00 น. (ทุกวัน)',
+                                            size: 'sm',
+                                            color: '#FFFFFF',
+                                            flex: 1,
+                                            margin: 'sm',
+                                            gravity: 'center'
+                                        }
+                                    ],
+                                    margin: 'sm'
+                                },
+                                {
+                                    type: 'box',
+                                    layout: 'horizontal',
+                                    contents: [
+                                        {
+                                            type: 'text',
+                                            text: '🚚',
+                                            flex: 0,
+                                            gravity: 'center'
+                                        },
+                                        {
+                                            type: 'text',
+                                            text: 'จัดส่งฟรี! สำหรับคำสั่งซื้อตั้งแต่ ฿100 ขึ้นไป',
+                                            size: 'sm',
+                                            color: '#FFFFFF',
+                                            flex: 1,
+                                            margin: 'sm',
+                                            gravity: 'center',
+                                            weight: 'bold'
+                                        }
+                                    ],
+                                    margin: 'sm'
                                 }
                             ],
-                            backgroundColor: '#FF8C00',
-                            cornerRadius: 'md',
-                            paddingAll: 'sm'
+                            margin: 'md'
                         }
                     ],
-                    backgroundColor: '#FF8C00',
-                    paddingAll: 'lg'
+                    backgroundColor: '#1E88E5',
+                    paddingAll: 'lg',
+                    spacing: 'sm'
                 },
                 styles: {
                     header: {
-                        backgroundColor: '#FF8C00'
+                        backgroundColor: '#1E88E5'
                     },
                     footer: {
-                        backgroundColor: '#FF8C00'
+                        backgroundColor: '#1E88E5'
                     }
                 }
             }
