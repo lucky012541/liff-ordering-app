@@ -3670,9 +3670,9 @@ ${itemsText}
             this.switchTab('orders');
         });
 
-        // Voice Note (placeholder)
+        // Voice Note
         document.getElementById('voiceNote').addEventListener('click', () => {
-            this.showToast('🎤 ฟีเจอร์ข้อความเสียงกำลังพัฒนา', 'info');
+            this.startVoiceRecording();
         });
 
         // Create Template
@@ -3781,6 +3781,185 @@ ${itemsText}
         this.renderCart();
         this.switchTab('menu');
         this.showToast('✅ เพิ่มรายการโปรดในตะกร้าแล้ว', 'success');
+    }
+
+    // Voice Recording Features
+    async startVoiceRecording() {
+        try {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                this.showToast('❌ เบราว์เซอร์ไม่รองรับการบันทึกเสียง', 'error');
+                return;
+            }
+
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            this.mediaRecorder = new MediaRecorder(stream);
+            this.audioChunks = [];
+
+            this.mediaRecorder.ondataavailable = (event) => {
+                this.audioChunks.push(event.data);
+            };
+
+            this.mediaRecorder.onstop = () => {
+                this.handleVoiceRecordingComplete();
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            this.mediaRecorder.start();
+            this.showVoiceRecordingUI();
+            this.showToast('🎤 กำลังบันทึกเสียง...', 'info');
+
+        } catch (error) {
+            console.error('Error starting voice recording:', error);
+            this.showToast('❌ ไม่สามารถเริ่มบันทึกเสียงได้', 'error');
+        }
+    }
+
+    stopVoiceRecording() {
+        if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+            this.mediaRecorder.stop();
+            this.hideVoiceRecordingUI();
+        }
+    }
+
+    showVoiceRecordingUI() {
+        // Create voice recording overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'voiceRecordingOverlay';
+        overlay.innerHTML = `
+            <div class="voice-recording-modal">
+                <div class="voice-recording-content">
+                    <div class="voice-animation">
+                        <div class="pulse-ring"></div>
+                        <div class="pulse-ring pulse-delay-1"></div>
+                        <div class="pulse-ring pulse-delay-2"></div>
+                        <i class="fas fa-microphone"></i>
+                    </div>
+                    <h3>🎤 กำลังบันทึกเสียง</h3>
+                    <p>พูดหมายเหตุพิเศษสำหรับคำสั่งซื้อ</p>
+                    <div class="voice-timer" id="voiceTimer">00:00</div>
+                    <div class="voice-actions">
+                        <button class="voice-stop-btn" onclick="app.stopVoiceRecording()">
+                            <i class="fas fa-stop"></i> หยุดบันทึก
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        this.startVoiceTimer();
+    }
+
+    hideVoiceRecordingUI() {
+        const overlay = document.getElementById('voiceRecordingOverlay');
+        if (overlay) {
+            overlay.remove();
+        }
+        if (this.voiceTimerInterval) {
+            clearInterval(this.voiceTimerInterval);
+        }
+    }
+
+    startVoiceTimer() {
+        let seconds = 0;
+        this.voiceTimerInterval = setInterval(() => {
+            seconds++;
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            const timerElement = document.getElementById('voiceTimer');
+            if (timerElement) {
+                timerElement.textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+        }, 1000);
+    }
+
+    handleVoiceRecordingComplete() {
+        const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        // Store voice note
+        const voiceNote = {
+            id: Date.now().toString(),
+            audioBlob: audioBlob,
+            audioUrl: audioUrl,
+            duration: this.audioChunks.length,
+            timestamp: new Date().toISOString(),
+            transcription: '' // For future AI transcription
+        };
+
+        this.saveVoiceNote(voiceNote);
+        this.showVoiceNotePreview(voiceNote);
+    }
+
+    saveVoiceNote(voiceNote) {
+        const voiceNotes = JSON.parse(localStorage.getItem('voice_notes') || '[]');
+        // Don't store the blob in localStorage, just metadata
+        const noteToStore = {
+            ...voiceNote,
+            audioBlob: undefined, // Remove blob for storage
+            hasAudio: true
+        };
+        voiceNotes.push(noteToStore);
+        localStorage.setItem('voice_notes', JSON.stringify(voiceNotes));
+    }
+
+    showVoiceNotePreview(voiceNote) {
+        // Create preview modal
+        const modal = document.createElement('div');
+        modal.className = 'voice-preview-modal';
+        modal.innerHTML = `
+            <div class="voice-preview-content">
+                <h3>🎤 ข้อความเสียงของคุณ</h3>
+                <div class="audio-player">
+                    <audio controls>
+                        <source src="${voiceNote.audioUrl}" type="audio/wav">
+                    </audio>
+                </div>
+                <div class="voice-actions">
+                    <button class="btn-secondary" onclick="this.parentElement.parentElement.parentElement.remove()">
+                        ยกเลิก
+                    </button>
+                    <button class="btn-primary" onclick="app.attachVoiceToOrder('${voiceNote.id}'); this.parentElement.parentElement.parentElement.remove();">
+                        <i class="fas fa-paperclip"></i> แนบกับคำสั่งซื้อ
+                    </button>
+                    <button class="btn-success" onclick="app.sendVoiceToLine('${voiceNote.id}'); this.parentElement.parentElement.parentElement.remove();">
+                        <i class="fas fa-paper-plane"></i> ส่งใน LINE
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        this.showToast('🎤 บันทึกเสียงสำเร็จ!', 'success');
+    }
+
+    attachVoiceToOrder(voiceNoteId) {
+        // Store reference to attach to next order
+        sessionStorage.setItem('pendingVoiceNote', voiceNoteId);
+        this.showToast('📎 จะแนบข้อความเสียงกับคำสั่งซื้อถัดไป', 'success');
+    }
+
+    async sendVoiceToLine(voiceNoteId) {
+        try {
+            if (typeof liff === 'undefined' || !liff.isLoggedIn()) {
+                this.showToast('❌ ไม่สามารถส่งใน LINE ได้', 'error');
+                return;
+            }
+
+            // Note: LINE LIFF doesn't directly support audio messages
+            // This would need to be implemented through a backend service
+            const textMessage = {
+                type: 'text',
+                text: '🎤 ลูกค้าส่งข้อความเสียง\n\n📝 หมายเหตุพิเศษสำหรับร้าน LUCKY\n⏰ ' + new Date().toLocaleString('th-TH')
+            };
+
+            await liff.sendMessages([textMessage]);
+            this.showToast('📱 ส่งแจ้งเตือนข้อความเสียงใน LINE แล้ว!', 'success');
+
+        } catch (error) {
+            console.error('Error sending voice note to LINE:', error);
+            this.showToast('❌ ไม่สามารถส่งใน LINE ได้', 'error');
+        }
     }
 }
 // Initialize the app when DOM is loaded
