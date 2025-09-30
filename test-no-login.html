@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ทดสอบ - ไม่มีล็อกอิน</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- SweetAlert2 for notifications -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1><i class="fas fa-shopping-cart"></i> สั่งซื้อสินค้า (ทดสอบ)</h1>
+            <div class="user-info" id="userInfo">
+                <span id="userName">โหมดทดสอบ - ไม่ต้องล็อกอิน</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="container">
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-tab="menu">
+                    <i class="fas fa-list"></i> รายการสินค้า
+                </button>
+                <button class="nav-tab" data-tab="orders">
+                    <i class="fas fa-receipt"></i> คำสั่งซื้อของฉัน
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Products Tab -->
+            <div class="tab-content active" id="products">
+                <!-- Search and Filter -->
+                <div class="controls">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="ค้นหาสินค้า...">
+                    </div>
+                    <div class="category-filter">
+                        <button class="filter-btn active" data-category="all">ทั้งหมด</button>
+                        <button class="filter-btn" data-category="ice">น้ำแข็ง</button>
+                        <button class="filter-btn" data-category="water">น้ำ</button>
+                        <button class="filter-btn" data-category="gas">แก๊ส</button>
+                    </div>
+                </div>
+
+                <!-- Products Grid -->
+                <div class="products-grid" id="productsGrid">
+                    <!-- Products will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Orders Tab -->
+            <div class="tab-content" id="orders">
+                <div class="orders-container">
+                    <h2><i class="fas fa-receipt"></i> คำสั่งซื้อของฉัน</h2>
+                    <div id="userOrdersList">
+                        <!-- User orders will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom App Bar -->
+    <div id="bottomAppBar" class="bottom-app-bar">
+        <div class="cart-info">
+            <div class="cart-icon">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-badge" id="cartCountMini">0</span>
+            </div>
+            <div class="cart-details">
+                <span id="cartItemsText">0 รายการ</span>
+                <span id="cartTotalText">฿0</span>
+            </div>
+        </div>
+        <button class="checkout-btn" id="checkoutBtn" onclick="app.openCheckoutModal()">
+            <i class="fas fa-credit-card"></i> สั่งซื้อ
+        </button>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading" class="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>กำลังโหลด...</p>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast" class="toast">
+        <div class="toast-content">
+            <i class="toast-icon"></i>
+            <span class="toast-message" id="toastMessage"></span>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div id="checkoutModal" class="modal">
+        <div class="modal-content checkout-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-shopping-cart"></i> สั่งซื้อสินค้า</h2>
+                <span class="close" onclick="app.closeCheckoutModal()">&times;</span>
+            </div>
+
+            <!-- Checkout Steps -->
+            <div class="checkout-stepper" id="checkoutStepper">
+                <div class="step current" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">ตรวจสอบ</div>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">ข้อมูล</div>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">ชำระเงิน</div>
+                </div>
+                <div class="step" data-step="4">
+                    <div class="step-number">4</div>
+                    <div class="step-label">สรุป</div>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <!-- Step 1: Cart Review -->
+                <div class="checkout-step active" id="cartReviewStep">
+                    <h3>ตรวจสอบรายการสินค้า</h3>
+                    <div id="cartItemsReview" class="cart-items-review">
+                        <!-- Cart items will be displayed here -->
+                    </div>
+                    <div class="checkout-total">
+                        <strong>ยอดรวม: <span id="cartTotalReview">฿0</span></strong>
+                    </div>
+                </div>
+
+                <!-- Step 2: Customer Info -->
+                <div class="checkout-step" id="customerInfoStep">
+                    <h3>ข้อมูลลูกค้า</h3>
+                    <form id="customerForm" class="customer-form">
+                        <div class="form-group">
+                            <label for="customerName">ชื่อ-นามสกุล *</label>
+                            <input type="text" id="customerName" name="customerName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="customerPhone">เบอร์โทรศัพท์ *</label>
+                            <input type="tel" id="customerPhone" name="customerPhone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="deliveryAddress">ที่อยู่จัดส่ง *</label>
+                            <textarea id="deliveryAddress" name="deliveryAddress" rows="3" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="deliveryNote">หมายเหตุ (ถ้ามี)</label>
+                            <textarea id="deliveryNote" name="deliveryNote" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Step 3: Payment Method -->
+                <div class="checkout-step" id="paymentStep">
+                    <h3>วิธีการชำระเงิน</h3>
+                    <div class="payment-methods">
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="cash" checked>
+                            <div class="payment-info">
+                                <i class="fas fa-money-bill"></i>
+                                <span>เงินสดปลายทาง</span>
+                            </div>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="transfer">
+                            <div class="payment-info">
+                                <i class="fas fa-university"></i>
+                                <span>โอนเงิน</span>
+                            </div>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="promptpay">
+                            <div class="payment-info">
+                                <i class="fas fa-qrcode"></i>
+                                <span>PromptPay</span>
+                            </div>
+                        </label>
+                    </div>
+                    <div id="paymentDetailsPanel" class="payment-details-panel">
+                        <!-- Payment details will be shown here -->
+                    </div>
+                </div>
+
+                <!-- Step 4: Order Summary -->
+                <div class="checkout-step" id="summaryStep">
+                    <h3>สรุปคำสั่งซื้อ</h3>
+                    <div id="orderSummary" class="order-summary">
+                        <!-- Order summary will be displayed here -->
+                    </div>
+                </div>
+
+                <!-- Receipt Step -->
+                <div class="checkout-step" id="receiptStep">
+                    <h3>ใบเสร็จการสั่งซื้อ</h3>
+                    <div id="receiptContent" class="receipt-content">
+                        <!-- Receipt will be displayed here -->
+                    </div>
+                    <div class="receipt-actions">
+                        <button class="btn btn-primary" onclick="app.printReceipt()">
+                            <i class="fas fa-print"></i> พิมพ์ใบเสร็จ
+                        </button>
+                        <button class="btn btn-secondary" onclick="app.shareReceipt()">
+                            <i class="fas fa-share"></i> แชร์ใบเสร็จ
+                        </button>
+                        <button class="btn btn-success" onclick="app.closeCheckoutModal()">
+                            <i class="fas fa-check"></i> เสร็จสิ้น
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button id="prevBtn" class="btn btn-secondary" onclick="app.prevCheckoutStep()">
+                    <i class="fas fa-arrow-left"></i> ย้อนกลับ
+                </button>
+                <button id="nextBtn" class="btn btn-primary" onclick="app.nextCheckoutStep()">
+                    ต่อไป <i class="fas fa-arrow-right"></i>
+                </button>
+                <button id="confirmOrderBtn" class="btn btn-success" onclick="app.confirmOrder()">
+                    <i class="fas fa-check"></i> ยืนยันสั่งซื้อ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modified Script.js with no LIFF -->
+    <script>
+        // Override LIFF to prevent any login
+        window.liff = undefined;
+        
+        // Load the main script but force development mode
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inject development settings
+            if (typeof OrderingApp !== 'undefined') {
+                const originalApp = new OrderingApp();
+                originalApp.loginRequired = false;
+                window.app = originalApp;
+            }
+        });
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
