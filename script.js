@@ -2653,13 +2653,13 @@ ${itemsText}
                     </div>
 
                     <div class="order-card-actions">
-                        <button class="btn-track" onclick="app.showOrderTracking(${order.id})">
+                        <button class="btn-track" onclick="app.showOrderTracking(${order.id})" style="color: #333; font-size: 14px;">
                             <i class="fas fa-map-marker-alt"></i> ติดตาม
                         </button>
-                        <button class="btn-details" onclick="app.showOrderDetails(${order.id})">
+                        <button class="btn-details" onclick="app.showOrderDetails(${order.id})" style="color: #333; font-size: 14px;">
                             <i class="fas fa-eye"></i> รายละเอียด
                         </button>
-                        <button class="btn-receipt" onclick="app.printOrderReceipt(${order.id})">
+                        <button class="btn-receipt" onclick="app.printOrderReceipt(${order.id})" style="color: #333; font-size: 14px;">
                             <i class="fas fa-print"></i> ใบเสร็จ
                         </button>
                     </div>
