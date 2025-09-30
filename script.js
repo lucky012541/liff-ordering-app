@@ -41,6 +41,9 @@ class OrderingApp {
             // Setup event listeners
             this.setupEventListeners();
 
+            // Initialize LINE-specific features
+            this.initLineFeatures();
+
             // Render initial content
             this.renderProducts();
             this.updateCartUI();
@@ -3560,6 +3563,224 @@ ${itemsText}
             console.error('❌ Error sending from receipt:', error);
             this.showToast('❌ ไม่สามารถส่งใน LINE ได้: ' + error.message, 'error');
         }
+    }
+
+    // LINE-specific Features
+    async initLineFeatures() {
+        this.loadLineProfile();
+        this.loadQuickTemplates();
+        this.loadFavoriteOrders();
+        this.setupQuickActions();
+    }
+
+    async loadLineProfile() {
+        try {
+            if (typeof liff === 'undefined' || !liff.isLoggedIn()) {
+                document.getElementById('profileName').textContent = 'ไม่ได้เชื่อมต่อกับ LINE';
+                document.getElementById('profileStatus').textContent = 'กรุณาเปิดผ่าน LINE';
+                return;
+            }
+
+            const profile = await liff.getProfile();
+            document.getElementById('profileName').textContent = profile.displayName;
+            document.getElementById('profileStatus').textContent = 'เชื่อมต่อสำเร็จ';
+            
+            // Update profile avatar if has picture
+            if (profile.pictureUrl) {
+                const avatarElement = document.getElementById('profileAvatar');
+                avatarElement.innerHTML = `<img src="${profile.pictureUrl}" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+            }
+            
+        } catch (error) {
+            console.error('Error loading LINE profile:', error);
+            document.getElementById('profileName').textContent = 'ไม่สามารถโหลดโปรไฟล์ได้';
+            document.getElementById('profileStatus').textContent = 'เกิดข้อผิดพลาด';
+        }
+    }
+
+    loadQuickTemplates() {
+        const templates = JSON.parse(localStorage.getItem('quick_templates') || '[]');
+        const templatesGrid = document.getElementById('quickTemplates');
+        
+        if (templates.length === 0) {
+            templatesGrid.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #6c757d;">
+                    <i class="fas fa-rocket" style="font-size: 2rem; margin-bottom: 12px; opacity: 0.5;"></i>
+                    <p>ยังไม่มีเทมเพลตคำสั่งซื้อด่วน</p>
+                    <p style="font-size: 0.9rem;">สร้างเทมเพลตจากการสั่งซื้อที่ชื่นชอบ</p>
+                </div>
+            `;
+            return;
+        }
+
+        templatesGrid.innerHTML = templates.map(template => `
+            <div class="template-card" onclick="app.useTemplate('${template.id}')">
+                <div class="template-header">
+                    <h5 class="template-name">${template.name}</h5>
+                    <button onclick="event.stopPropagation(); app.deleteTemplate('${template.id}')" style="background: none; border: none; color: #dc3545; cursor: pointer;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="template-items">${template.items.length} รายการ</div>
+                <div class="template-total">฿${template.total}</div>
+            </div>
+        `).join('');
+    }
+
+    loadFavoriteOrders() {
+        const favorites = this.orders.filter(order => order.isFavorite).slice(0, 6);
+        const favoritesGrid = document.getElementById('favoriteOrders');
+        
+        if (favorites.length === 0) {
+            favoritesGrid.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #6c757d;">
+                    <i class="fas fa-heart" style="font-size: 2rem; margin-bottom: 12px; opacity: 0.5;"></i>
+                    <p>ยังไม่มีรายการโปรด</p>
+                    <p style="font-size: 0.9rem;">เพิ่มรายการโปรดจากคำสั่งซื้อที่ผ่านมา</p>
+                </div>
+            `;
+            return;
+        }
+
+        favoritesGrid.innerHTML = favorites.map(order => `
+            <div class="favorite-card" onclick="app.reorderFromFavorite('${order.id}')">
+                <div class="favorite-header">
+                    <h5 class="favorite-name">คำสั่งซื้อ #${order.id}</h5>
+                    <i class="fas fa-heart" style="color: #dc3545;"></i>
+                </div>
+                <div class="favorite-items">${order.items.length} รายการ</div>
+                <div class="favorite-total">฿${order.total}</div>
+            </div>
+        `).join('');
+    }
+
+    setupQuickActions() {
+        // Share Location
+        document.getElementById('shareLocation').addEventListener('click', () => {
+            this.shareCurrentLocation();
+        });
+
+        // Call Shop
+        document.getElementById('callShop').addEventListener('click', () => {
+            window.location.href = 'tel:082-433-3339';
+        });
+
+        // Order History
+        document.getElementById('orderHistory').addEventListener('click', () => {
+            this.switchTab('orders');
+        });
+
+        // Voice Note (placeholder)
+        document.getElementById('voiceNote').addEventListener('click', () => {
+            this.showToast('🎤 ฟีเจอร์ข้อความเสียงกำลังพัฒนา', 'info');
+        });
+
+        // Create Template
+        document.getElementById('createTemplate').addEventListener('click', () => {
+            this.showCreateTemplateModal();
+        });
+
+        // Refresh Profile
+        document.getElementById('refreshProfile').addEventListener('click', () => {
+            this.loadLineProfile();
+        });
+    }
+
+    async shareCurrentLocation() {
+        try {
+            if (!navigator.geolocation) {
+                this.showToast('❌ เบราว์เซอร์ไม่รองรับการระบุตำแหน่ง', 'error');
+                return;
+            }
+
+            this.showToast('📍 กำลังระบุตำแหน่ง...', 'info');
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const { latitude, longitude } = position.coords;
+                    
+                    if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+                        const locationMessage = {
+                            type: 'location',
+                            title: 'ที่อยู่จัดส่ง',
+                            address: `${latitude}, ${longitude}`,
+                            latitude: latitude,
+                            longitude: longitude
+                        };
+                        
+                        await liff.sendMessages([locationMessage]);
+                        this.showToast('📍 ส่งตำแหน่งไปในแชทแล้ว!', 'success');
+                    } else {
+                        // Copy to clipboard as fallback
+                        const locationText = `ตำแหน่งของฉัน: https://maps.google.com/?q=${latitude},${longitude}`;
+                        navigator.clipboard.writeText(locationText);
+                        this.showToast('📍 คัดลอกลิงก์ตำแหน่งแล้ว', 'success');
+                    }
+                },
+                (error) => {
+                    this.showToast('❌ ไม่สามารถระบุตำแหน่งได้', 'error');
+                }
+            );
+        } catch (error) {
+            console.error('Error sharing location:', error);
+            this.showToast('❌ เกิดข้อผิดพลาดในการแชร์ตำแหน่ง', 'error');
+        }
+    }
+
+    showCreateTemplateModal() {
+        if (this.cart.length === 0) {
+            this.showToast('❌ กรุณาเพิ่มสินค้าในตะกร้าก่อนสร้างเทมเพลต', 'error');
+            return;
+        }
+
+        const templateName = prompt('ชื่อเทมเพลต:', `เทมเพลต ${new Date().toLocaleDateString('th-TH')}`);
+        if (!templateName) return;
+
+        const template = {
+            id: Date.now().toString(),
+            name: templateName,
+            items: [...this.cart],
+            total: this.calculateCartTotal(),
+            createdAt: new Date().toISOString()
+        };
+
+        const templates = JSON.parse(localStorage.getItem('quick_templates') || '[]');
+        templates.push(template);
+        localStorage.setItem('quick_templates', JSON.stringify(templates));
+
+        this.loadQuickTemplates();
+        this.showToast('✅ สร้างเทมเพลตสำเร็จ!', 'success');
+    }
+
+    useTemplate(templateId) {
+        const templates = JSON.parse(localStorage.getItem('quick_templates') || '[]');
+        const template = templates.find(t => t.id === templateId);
+        
+        if (!template) return;
+
+        this.cart = [...template.items];
+        this.renderCart();
+        this.switchTab('menu');
+        this.showToast(`✅ ใช้เทมเพลต "${template.name}" แล้ว`, 'success');
+    }
+
+    deleteTemplate(templateId) {
+        const templates = JSON.parse(localStorage.getItem('quick_templates') || '[]');
+        const updatedTemplates = templates.filter(t => t.id !== templateId);
+        localStorage.setItem('quick_templates', JSON.stringify(updatedTemplates));
+        
+        this.loadQuickTemplates();
+        this.showToast('🗑️ ลบเทมเพลตแล้ว', 'success');
+    }
+
+    reorderFromFavorite(orderId) {
+        const order = this.orders.find(o => o.id === orderId);
+        if (!order) return;
+
+        this.cart = [...order.items];
+        this.renderCart();
+        this.switchTab('menu');
+        this.showToast('✅ เพิ่มรายการโปรดในตะกร้าแล้ว', 'success');
     }
 }
 // Initialize the app when DOM is loaded

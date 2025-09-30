@@ -44,6 +44,9 @@
                 <button class="nav-tab active" data-tab="menu">
                     <i class="fas fa-list"></i> รายการสินค้า
                 </button>
+                <button class="nav-tab" data-tab="quick-order">
+                    <i class="fas fa-bolt"></i> สั่งด่วน
+                </button>
                 <button class="nav-tab" data-tab="orders">
                     <i class="fas fa-receipt"></i> คำสั่งซื้อของฉัน
                 </button>
@@ -69,6 +72,71 @@
 
                 <div class="products-grid" id="productsGrid">
                     <!-- Products will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Quick Order Tab -->
+            <div class="tab-content" id="quick-order">
+                <div class="quick-order-section">
+                    <h3><i class="fas fa-bolt"></i> สั่งซื้อด่วน</h3>
+                    
+                    <!-- LINE Profile Info -->
+                    <div class="line-profile-card" id="lineProfileCard">
+                        <div class="profile-header">
+                            <div class="profile-avatar" id="profileAvatar">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <div class="profile-info">
+                                <h4 id="profileName">กำลังโหลดโปรไฟล์...</h4>
+                                <p id="profileStatus">เชื่อมต่อกับ LINE</p>
+                            </div>
+                            <button class="refresh-profile-btn" id="refreshProfile">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Order Templates -->
+                    <div class="quick-templates-section">
+                        <h4><i class="fas fa-rocket"></i> เทมเพลตคำสั่งซื้อด่วน</h4>
+                        <div class="templates-grid" id="quickTemplates">
+                            <!-- Templates will be populated here -->
+                        </div>
+                        <button class="create-template-btn" id="createTemplate">
+                            <i class="fas fa-plus"></i> สร้างเทมเพลตใหม่
+                        </button>
+                    </div>
+
+                    <!-- Favorite Orders -->
+                    <div class="favorites-section">
+                        <h4><i class="fas fa-heart"></i> รายการโปรด</h4>
+                        <div class="favorites-grid" id="favoriteOrders">
+                            <!-- Favorites will be populated here -->
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="quick-actions-section">
+                        <h4><i class="fas fa-magic"></i> การกระทำด่วน</h4>
+                        <div class="quick-actions-grid">
+                            <button class="quick-action-btn" id="shareLocation">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>แชร์ที่อยู่</span>
+                            </button>
+                            <button class="quick-action-btn" id="callShop">
+                                <i class="fas fa-phone"></i>
+                                <span>โทรหาร้าน</span>
+                            </button>
+                            <button class="quick-action-btn" id="orderHistory">
+                                <i class="fas fa-history"></i>
+                                <span>ประวัติการสั่ง</span>
+                            </button>
+                            <button class="quick-action-btn" id="voiceNote">
+                                <i class="fas fa-microphone"></i>
+                                <span>ข้อความเสียง</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
