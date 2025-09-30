@@ -2605,6 +2605,7 @@ ${itemsText}
     renderUserOrders() {
         console.log('📋 Rendering user orders...');
         console.log('📦 Total orders:', this.orders.length);
+        console.log('👤 Current user:', this.currentUser);
         
         const userOrdersList = document.getElementById('userOrdersList');
         if (!userOrdersList) {
@@ -2613,11 +2614,20 @@ ${itemsText}
         }
 
         // Filter orders by current user
-        const userOrders = this.orders.filter(order =>
-            !this.currentUser || order.userId === this.currentUser.userId || order.userId === 'guest'
-        );
+        // ในโหมดพัฒนา (dev_fallback) แสดงทุก order
+        const isDevelopment = this.currentUser && this.currentUser.userId.startsWith('dev_');
+        
+        const userOrders = isDevelopment 
+            ? this.orders  // Development mode: show all orders
+            : this.orders.filter(order =>
+                !this.currentUser || 
+                order.userId === this.currentUser.userId || 
+                order.userId === 'guest' ||
+                order.userId.startsWith('dev_')  // Include dev orders for debugging
+            );
         
         console.log('👤 User orders:', userOrders.length);
+        console.log('🔧 Development mode:', isDevelopment);
         if (userOrders.length > 0) {
             console.log('📝 First order:', userOrders[0]);
         }
